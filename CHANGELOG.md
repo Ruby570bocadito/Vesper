@@ -2,6 +2,33 @@
 
 Todas las fechas son ISO-8601. Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [Unreleased] — ciclo v1.1 (calidad)
+
+### Añadido
+- Tests de `internal/api` con httptest (26 tests): flujos de sesión (login/logout,
+  cookie, query token), JWT (login de dashboard, expiración, tampering de payload),
+  agentes (registro, filtro por campaña, kill), campañas (creación, consulta,
+  pause/resume), CORS y rate limiting
+- Jobs nuevos en CI: `race` (`go test -race ./...`), `lint` (golangci-lint con
+  `.golangci.yml` documentado) y `coverage` (cobertura Go+Python con badge
+  auto-committed en `docs/coverage.svg`)
+
+### Corregido
+- `SetupAuth()` sobrescribía el handler final dejando el **rate limiter fuera de
+  la cadena** (código muerto en runtime): ahora la cadena real es
+  CORS → rate limit → (JWT) → mux en ambos modos
+- Eliminados los comandos fantasma de la remodelación: `ransomware`,
+  `propagate` y `deploy` en la consola y `lateral scan|propagate` en cobra —
+  llamaban a handlers del bridge que ya no existen y su salida era teatral
+- `payload Generate` y `module push` ahora devuelven 400 ante JSON malformado
+  (antes ignoraban el error de decode)
+
+### Calidad
+- golangci-lint: de **98 hallazgos a 0** — mejor-effort explícito (`_ =`) en
+  limpiezas best-effort, errores de killchain registrados en auto-mode,
+  eliminado código muerto (23 símbolos), deprecaciones `lipgloss.Style.Copy`
+  resueltas, `grpc.DialContext` conservado con justificación documentada
+
 ## [1.0.0] — 2026-09-10 — "Vesper"
 
 Primera versión bajo el nombre **Vesper**. Esta es una **remodelación

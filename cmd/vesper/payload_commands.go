@@ -189,7 +189,7 @@ func runC2Listen(cmd *cobra.Command, args []string) {
 			continue
 		}
 		fmt.Fprintf(ConsoleOut, "  [heartbeat] connection from %s\n", conn.RemoteAddr())
-		conn.Write([]byte(`{"status":"ok","version":"3.2"}`))
+		_, _ = conn.Write([]byte(`{"status":"ok","version":"3.2"}`))
 		conn.Close()
 	}
 }

@@ -82,10 +82,10 @@ func (bc *BridgeClient) Connect(ctx context.Context) error {
 		return fmt.Errorf("already connected")
 	}
 
-	conn, err := grpc.DialContext(ctx, bc.address,
+	conn, err := grpc.DialContext(ctx, bc.address, //nolint:staticcheck // supported throughout gRPC 1.x; NewClient has different dial semantics
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-		grpc.WithTimeout(5*time.Second),
+		grpc.WithBlock(),                //nolint:staticcheck // see DialContext note above
+		grpc.WithTimeout(5*time.Second), //nolint:staticcheck // see DialContext note above
 	)
 	if err != nil {
 		return fmt.Errorf("connecting to gRPC bridge at %s: %w", bc.address, err)
@@ -121,7 +121,7 @@ func (bc *BridgeClient) StartBridge(ctx context.Context, bridgeScript string) er
 
 	// Connect via gRPC
 	if err := bc.Connect(ctx); err != nil {
-		bc.cmd.Process.Kill()
+		_ = bc.cmd.Process.Kill()
 		return fmt.Errorf("connecting to gRPC bridge after start: %w", err)
 	}
 
@@ -226,7 +226,7 @@ func (bc *BridgeClient) Disconnect() error {
 	}
 
 	if bc.cmd != nil && bc.cmd.Process != nil {
-		bc.cmd.Process.Kill()
+		_ = bc.cmd.Process.Kill()
 		bc.cmd = nil
 	}
 

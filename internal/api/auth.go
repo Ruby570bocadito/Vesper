@@ -410,14 +410,10 @@ func (s *Server) SetupAuth() {
 	s.mux.HandleFunc("/api/me", s.auth.HandleMe)
 
 	if authToken != "" {
-		s.srv.Handler = corsMiddleware(s.auth.jwtAuthMiddleware(s.mux))
+		s.srv.Handler = corsMiddleware(s.rateLimitMiddleware(s.auth.jwtAuthMiddleware(s.mux)))
 		s.log.Info("JWT authentication enabled for dashboard API")
 	} else {
-		s.srv.Handler = corsMiddleware(s.mux)
+		s.srv.Handler = corsMiddleware(s.rateLimitMiddleware(s.mux))
 		s.log.Info("Dashboard auth disabled (no auth_token configured)")
 	}
-}
-
-func init() {
-	_ = fmt.Sprintf("auth")
 }

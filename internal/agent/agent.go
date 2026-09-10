@@ -25,10 +25,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"net"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
@@ -40,12 +38,11 @@ import (
 
 // Agent is the unified implant.
 type Agent struct {
-	cfg       *config.Config
-	log       *logger.Logger
-	id        string
-	keypair   *crypto.KeyPair
-	session   *crypto.Session
-	serverPub [32]byte
+	cfg     *config.Config
+	log     *logger.Logger
+	id      string
+	keypair *crypto.KeyPair
+	session *crypto.Session
 
 	moduleManager *ModuleManager
 	bridgeClient  *BridgeClient
@@ -247,16 +244,6 @@ func (a *Agent) ExecuteModule(ctx context.Context, name string, params map[strin
 }
 
 // moduleList returns registered module names.
-func (a *Agent) moduleList() []string {
-	a.moduleManager.mu.RLock()
-	defer a.moduleManager.mu.RUnlock()
-
-	names := make([]string, 0, len(a.moduleManager.modules))
-	for name := range a.moduleManager.modules {
-		names = append(names, name)
-	}
-	return names
-}
 
 func generateAgentID() string {
 	b := make([]byte, 8)
@@ -266,56 +253,7 @@ func generateAgentID() string {
 
 // getLocalIP returns the first non-loopback IPv4 address using the standard
 // library — works on Linux, Windows, and macOS without shelling out.
-func getLocalIP() string {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		hostname, _ := os.Hostname()
-		return hostname
-	}
-	for _, iface := range ifaces {
-		// Skip loopback and down interfaces
-		if iface.Flags&net.FlagLoopback != 0 || iface.Flags&net.FlagUp == 0 {
-			continue
-		}
-		addrs, err := iface.Addrs()
-		if err != nil {
-			continue
-		}
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip == nil || ip.IsLoopback() {
-				continue
-			}
-			if ip4 := ip.To4(); ip4 != nil {
-				return ip4.String()
-			}
-		}
-	}
-	hostname, _ := os.Hostname()
-	return hostname
-}
 
 // getPrivileges returns the privilege level of the current process.
 // Works cross-platform: on Windows os.Geteuid() returns -1, so we fall back
 // to checking the USERNAME environment variable for SYSTEM/Administrator.
-func getPrivileges() []string {
-	// Unix: Geteuid == 0 means root
-	if runtime.GOOS != "windows" {
-		if os.Geteuid() == 0 {
-			return []string{"root"}
-		}
-		return []string{"user"}
-	}
-	// Windows: check for SYSTEM account or elevated token via USERNAME
-	username := strings.ToUpper(os.Getenv("USERNAME"))
-	if username == "SYSTEM" || username == "ADMINISTRATOR" || username == "" {
-		return []string{"SYSTEM"}
-	}
-	return []string{"user"}
-}

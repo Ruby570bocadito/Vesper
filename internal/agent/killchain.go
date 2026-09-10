@@ -28,9 +28,8 @@ import (
 
 // KillChainEngine manages automatic kill chain phase transitions.
 type KillChainEngine struct {
-	log      *logger.Logger
-	phase    types.KillChainPhase
-	campaign string
+	log   *logger.Logger
+	phase types.KillChainPhase
 }
 
 // NewKillChainEngine creates a new kill chain engine.

@@ -16,10 +16,7 @@ import (
 type AIOrchestrator struct {
 	mu           sync.RWMutex
 	stateHistory []StateTransition
-	predictions  []Prediction
 	confidence   float64
-	agentCount   int
-	campaignID   string
 	lastDecision time.Time
 	rewardModel  *RewardModel
 }
@@ -144,7 +141,7 @@ func (a *AIOrchestrator) PredictNextState(currentState string) Prediction {
 	}
 
 	var bestAction string
-	var bestValue float64 = -1e9
+	bestValue := -1e9
 
 	for _, action := range availableActions {
 		if values, ok := a.rewardModel.QTable[currentState]; ok {

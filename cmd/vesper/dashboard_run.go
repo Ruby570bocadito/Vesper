@@ -70,7 +70,7 @@ func startDashboard(cfg *config.Config) error {
 	go func() {
 		<-sigCh
 		fmt.Printf("\n\033[38;5;196m  [!]\033[0m Shutting down Vesper...\n")
-		apiServer.Shutdown(context.Background())
+		_ = apiServer.Shutdown(context.Background())
 		state.Stop()
 		cancel()
 		os.Exit(0)

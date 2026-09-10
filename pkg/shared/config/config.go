@@ -268,9 +268,6 @@ func (c *Config) Validate() error {
 	if c.AI.Enabled && c.AI.OllamaHost == "" {
 		return fmt.Errorf("ai.ollama_host is required when AI is enabled")
 	}
-	if c.Safety.GeofenceEnabled && c.Lab.Network == "" {
-		// Warn but don't fail — lab network is optional
-	}
 	return nil
 }
 
@@ -282,5 +279,6 @@ func (c *Config) Merge(overlay *Config) {
 	data, _ := yaml.Marshal(c)
 	overlayData, _ := yaml.Marshal(overlay)
 	merged := append(data, overlayData...)
-	yaml.Unmarshal(merged, c)
+	// fed by our own yaml.Marshal above, cannot fail in practice
+	_ = yaml.Unmarshal(merged, c)
 }

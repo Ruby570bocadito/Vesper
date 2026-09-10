@@ -9,12 +9,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ruby570bocadito/vesper/pkg/shared/config"
-	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 )
 
 var (
 	cfg             *config.Config
-	log             *logger.Logger
 	cfgPath         string
 	launchConsole   bool
 	launchDashboard bool
@@ -31,11 +29,6 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			cfg = config.Default()
 		}
-		log, _ = logger.New(logger.Config{
-			Level:     cfg.Logging.Level,
-			Format:    cfg.Logging.Format,
-			Component: "cli",
-		})
 		applySafety(cfg)
 		return nil
 	},
@@ -84,11 +77,11 @@ func buildRootLong() string {
 	for _, r := range rows {
 		sb.WriteString(r.c + r.t + ansiR + "\n")
 	}
-	sb.WriteString(fmt.Sprintf("\n  %s%sSemi-Autonomous Red Team Platform%s  %sv1.0.0%s\n",
-		cPrimary, ansiB, ansiR, cMuted, ansiR))
-	sb.WriteString(fmt.Sprintf("  %s%s%s\n", cMuted, strings.Repeat("─", 52), ansiR))
+	fmt.Fprintf(&sb, "\n  %s%sSemi-Autonomous Red Team Platform%s  %sv1.0.0%s\n",
+		cPrimary, ansiB, ansiR, cMuted, ansiR)
+	fmt.Fprintf(&sb, "  %s%s%s\n", cMuted, strings.Repeat("─", 52), ansiR)
 
-	sb.WriteString(fmt.Sprintf(`
+	fmt.Fprintf(&sb, `
 %sMODES%s
   %svesper%s              → Interactive TUI (BubbleTea)
   %svesper console%s      → msfconsole-style interactive shell
@@ -104,26 +97,9 @@ func buildRootLong() string {
 		cSuccess, ansiR,
 		cSuccess, ansiR,
 		cPrimary+ansiB, ansiR,
-	))
+	)
 
 	return sb.String()
-}
-
-func printUsageCard() {
-	printPanel("QUICK START", fmt.Sprintf(
-		`%svesper console%s          Launch interactive shell
-%svesper dashboard%s         Start API server (port 8443)
-%svesper campaign start%s    Begin a new red team operation
-%svesper recon scan%s        Discover hosts & services
-%svesper ai suggest%s        Get AI-powered recommendations`,
-		cSuccess, ansiR,
-		cSuccess, ansiR,
-		cSuccess, ansiR,
-		cSuccess, ansiR,
-		cSuccess, ansiR,
-	))
-	fmt.Fprintf(ConsoleOut, "\n  %s[TAB]%s Navigate  %s[q/ctrl+c]%s Quit  %s--help%s Any command\n\n",
-		cInfo, ansiR, cInfo, ansiR, cInfo, ansiR)
 }
 
 func Execute() {
@@ -137,7 +113,6 @@ func Execute() {
 	rootCmd.AddCommand(agentCmd())
 	rootCmd.AddCommand(exploitCmd())
 	rootCmd.AddCommand(aiCmd())
-	rootCmd.AddCommand(lateralCmd())
 	rootCmd.AddCommand(dashboardCmd())
 	rootCmd.AddCommand(dbCmd())
 	rootCmd.AddCommand(labCmd())

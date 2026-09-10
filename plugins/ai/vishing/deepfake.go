@@ -18,8 +18,6 @@ type DeepfakeVishing struct {
 	voiceModel  string
 	targetPhone string
 	script      string
-	callerID    string
-	recordPath  string
 }
 
 type VoiceClone struct {
@@ -103,7 +101,7 @@ except Exception as e:
 		clone.ClonedVoice = generateSilentWav(1000)
 	} else {
 		clone.ClonedVoice, _ = os.ReadFile(outputFile)
-		os.Remove(outputFile)
+		_ = os.Remove(outputFile)
 	}
 
 	clone.Duration = float64(len(clone.ClonedVoice)) / 44100.0
@@ -161,7 +159,7 @@ to complete the update within the next 15 minutes.`, targetName, role, company),
 func (d *DeepfakeVishing) PlaceVoIPCall(targetNumber string) error {
 	d.targetPhone = targetNumber
 
-	voipScript := fmt.Sprintf(`
+	voipScript := `
 import sys
 try:
     import pyVoIP
@@ -175,7 +173,7 @@ try:
     print("Twilio available for SIP trunking")
 except ImportError:
     print("Twilio not installed")
-`)
+`
 
 	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("vesper_voip_%d.py", os.Getpid()))
 	os.WriteFile(tmpScript, []byte(voipScript), 0644)
@@ -210,7 +208,7 @@ except Exception as e:
 	os.WriteFile(tmpScript, []byte(psScript), 0644)
 	defer os.Remove(tmpScript)
 
-	exec.Command("python3", tmpScript).Run()
+	_ = exec.Command("python3", tmpScript).Run()
 	return nil
 }
 

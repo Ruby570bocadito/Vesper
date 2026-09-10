@@ -248,7 +248,7 @@ func (s *AppState) Start(ctx context.Context) error {
 
 // Stop tears down all connections.
 func (s *AppState) Stop() {
-	s.Bridge.Disconnect()
+	_ = s.Bridge.Disconnect()
 	if s.DB != nil {
 		s.DB.Close()
 	}

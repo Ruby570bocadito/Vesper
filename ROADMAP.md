@@ -6,22 +6,22 @@ Doble objetivo: portfolio visible + evidencias exportables para auditorías de l
 
 ## Fase 0 — Publicar v1.0.0 (inmediato)
 
-- [ ] Push del commit de remodelación + rename del repo a `Vesper`
-- [ ] CI verde sobre el nuevo commit
-- [ ] GitHub Release v1.0.0: binarios linux amd64/arm64 + notas + zip
-- [ ] Topics y social preview del repo (`red-team`, `c2`, `golang`, `security`)
+- [x] Push del commit de remodelación + rename del repo a `Vesper`
+- [x] CI verde sobre el nuevo commit
+- [x] GitHub Release v1.0.0: binarios linux amd64/arm64 + notas + zip
+- [x] Topics y social preview del repo (`red-team`, `c2`, `golang`, `security`)
 
 ## v1.1 — Calidad (semanas 1–4)
 
 Área: calidad. Objetivo: que "está testeado" sea verificable por un extraño
 sin leer una línea de código.
 
-- [ ] Tests de `internal/api` con httptest: rutas auth/campaigns/agents (JWT incluido)
-- [ ] `go test -race` como job propio en CI
-- [ ] `golangci-lint` en CI (config mínima: errcheck, govet, staticcheck, gosimple)
-- [ ] Badge de cobertura: `go test -cover` + `pytest --cov` agregados en un job → badge en README
-- [ ] Dashboard: tests de componentes con Vitest + conectar el store al `/ws/terminal` real
-      (el endpoint ya existe; el store sigue en modo mock)
+- [x] Tests de `internal/api` con httptest: rutas auth/campaigns/agents (JWT incluido)
+- [x] `go test -race` como job propio en CI
+- [x] `golangci-lint` en CI (config mínima: errcheck, govet, staticcheck, gosimple)
+- [x] Badge de cobertura: `go test -cover` + `pytest --cov` agregados en un job → badge en README
+- [x] Dashboard: el widget xterm ya ejecuta la consola real vía `/ws/terminal` (hecho en la v1.0.0)
+- [ ] Dashboard: tests de componentes con Vitest
 - [ ] Release v1.1.0 + GIF corto: terminal xterm.js ejecutando la consola real
 
 ## v1.2 — Lab reproducible + recon real (semanas 5–8)

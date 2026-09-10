@@ -80,7 +80,7 @@ func (c *gRPCConnector) Connect(ctx context.Context, serverAddr string) error {
 		}),
 	)
 
-	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
+	conn, err := grpc.DialContext(ctx, serverAddr, opts...) //nolint:staticcheck // supported throughout gRPC 1.x; NewClient has different dial semantics
 	if err != nil {
 		return fmt.Errorf("dialing C2 server at %s: %w", serverAddr, err)
 	}

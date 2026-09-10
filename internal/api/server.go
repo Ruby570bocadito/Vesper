@@ -161,12 +161,8 @@ func NewWithState(cfg *config.Config, state *appstate.AppState) (*Server, error)
 	for _, a := range state.GetAgents() {
 		s.agents[a.ID] = a
 	}
-	for _, h := range state.GetHosts() {
-		s.hosts = append(s.hosts, h)
-	}
-	for _, v := range state.GetVulns() {
-		s.vulns = append(s.vulns, v)
-	}
+	s.hosts = append(s.hosts, state.GetHosts()...)
+	s.vulns = append(s.vulns, state.GetVulns()...)
 
 	s.registerRoutes()
 	return s, nil
@@ -461,9 +457,6 @@ func (s *Server) handleHosts(w http.ResponseWriter, r *http.Request) {
 	copy(hosts, s.hosts)
 	s.mu.RUnlock()
 
-	if hosts == nil {
-		hosts = make([]*types.Target, 0)
-	}
 	writeJSON(w, http.StatusOK, hosts)
 }
 
@@ -508,9 +501,6 @@ func (s *Server) handleVulnerabilities(w http.ResponseWriter, r *http.Request) {
 	copy(vulns, s.vulns)
 	s.mu.RUnlock()
 
-	if vulns == nil {
-		vulns = make([]*types.Vulnerability, 0)
-	}
 	writeJSON(w, http.StatusOK, vulns)
 }
 
@@ -524,7 +514,10 @@ func (s *Server) handleReconScan(w http.ResponseWriter, r *http.Request) {
 		Target string `json:"target"`
 		Mode   string `json:"mode"`
 	}
-	json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
 
 	// Kick off async scan via orchestrator
 	go func() {
@@ -799,7 +792,7 @@ func (s *Server) handleBlueMetrics(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if blue == nil || len(blue) == 0 {
+	if len(blue) == 0 {
 		blue = []map[string]interface{}{}
 	}
 	writeJSON(w, http.StatusOK, blue)
@@ -901,7 +894,10 @@ func (s *Server) handlePhantomAction(w http.ResponseWriter, r *http.Request) {
 		// Parse optional params from request body
 		params := map[string]interface{}{}
 		if r.Body != nil {
-			json.NewDecoder(r.Body).Decode(&params)
+			if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+				writeError(w, http.StatusBadRequest, "invalid JSON")
+				return
+			}
 		}
 		resp, err := s.state.Bridge.CallRaw(r.Context(), "phantom", action, params)
 		if err == nil && resp != nil {
@@ -945,7 +941,7 @@ var startTime = time.Now()
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
@@ -1331,7 +1327,10 @@ func (s *Server) handleModulePush(w http.ResponseWriter, r *http.Request) {
 		Module  string `json:"module"`
 		AgentID string `json:"agent_id"`
 	}
-	json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
 	if req.Module == "" || req.AgentID == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "module and agent_id required"})
 		return
@@ -1462,9 +1461,10 @@ func (s *Server) handlePayloadGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	targetArch := req.Arch
-	if targetArch == "x64" {
+	switch targetArch {
+	case "x64":
 		targetArch = "amd64"
-	} else if targetArch == "x86" {
+	case "x86":
 		targetArch = "386"
 	}
 

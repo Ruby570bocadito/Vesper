@@ -541,67 +541,6 @@ func aiCmd() *cobra.Command {
 	return cmd
 }
 
-// ─── lateral ──────────────────────────────────────────────────────────────────
-
-func lateralCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "lateral",
-		Short: "Lateral movement operations",
-	}
-	cmd.PersistentFlags().String("subnet", "10.0.0.0/24", "Target subnet")
-	cmd.PersistentFlags().String("method", "smb", "Method: smb | ssh | wmi | psexec")
-
-	scanCmd := &cobra.Command{
-		Use:   "scan",
-		Short: "Discover reachable hosts from current pivot",
-		Run: func(c *cobra.Command, a []string) {
-			subnet, _ := c.Flags().GetString("subnet")
-			printInfo("Scanning subnet %s%s%s for reachable hosts …", cCyan+ansiB, subnet, ansiR)
-			state := GetOrCreateState()
-			if state != nil && state.Bridge != nil && state.Bridge.Connected() {
-				result, err := state.Bridge.CallRaw(c.Context(), "ransomware", "propagate", map[string]interface{}{"subnet": subnet})
-				if err == nil && result != nil {
-					if targets, ok := result["targets"]; ok {
-						if tList, ok := targets.([]interface{}); ok {
-							printOK("%d vulnerable hosts found", len(tList))
-							tbl := newTable("IP", "Port", "OS", "Exploit")
-							for _, t := range tList {
-								if tm, ok := t.(map[string]interface{}); ok {
-									tbl.addRow(
-										fmt.Sprintf("%v", tm["ip"]),
-										fmt.Sprintf("%v", tm["port"]),
-										fmt.Sprintf("%v", tm["os"]),
-										fmt.Sprintf("%v", tm["exploit"]),
-									)
-								}
-							}
-							tbl.render()
-							return
-						}
-					}
-				}
-			}
-			printWarn("Bridge offline — simulation mode")
-			printOK("Host discovery complete")
-		},
-	}
-
-	propagateCmd := &cobra.Command{
-		Use:     "propagate",
-		Short:   "Spread implant to discovered hosts",
-		Example: "  vesper lateral propagate --subnet 10.10.0.0/16 --method smb",
-		Run: func(c *cobra.Command, a []string) {
-			subnet, _ := c.Flags().GetString("subnet")
-			method, _ := c.Flags().GetString("method")
-			printInfo("Propagating via %s%s%s to %s%s%s …", cOrange+ansiB, method, ansiR, cWhite, subnet, ansiR)
-			printOK("Propagation queued — agents will report via C2.")
-		},
-	}
-
-	cmd.AddCommand(scanCmd, propagateCmd)
-	return cmd
-}
-
 // ─── dashboard ────────────────────────────────────────────────────────────────
 
 func dashboardCmd() *cobra.Command {
@@ -693,7 +632,7 @@ func labCmd() *cobra.Command {
 		Use:   "down",
 		Short: "Stop and remove lab containers",
 		Run: func(c *cobra.Command, a []string) {
-			exec.Command("docker", "compose", "-f", "lab/docker-compose.yml", "down").Run()
+			_ = exec.Command("docker", "compose", "-f", "lab/docker-compose.yml", "down").Run()
 			printOK("Lab stopped.")
 		},
 	}

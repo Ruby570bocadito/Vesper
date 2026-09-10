@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/ruby570bocadito/vesper/pkg/shared/config"
 	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
@@ -20,7 +19,6 @@ type DecisionEngine struct {
 	rules      *RulesEngine
 	planner    *AStarPlanner
 	ai         *AIEngine
-	mu         sync.RWMutex
 }
 
 // NewDecisionEngine creates the hybrid decision engine.

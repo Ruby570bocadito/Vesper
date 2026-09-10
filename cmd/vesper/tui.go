@@ -159,7 +159,7 @@ func (m model) dashboardTab() string {
 	if len(hosts) == 0 {
 		netLines += " (no hosts discovered)\n"
 	}
-	networkMap := borderStyle.Copy().Width(34).Height(10).Render(netLines)
+	networkMap := borderStyle.Width(34).Height(10).Render(netLines)
 
 	// AI panel from first decision
 	aiLines := " AI CONSOLE\n"
@@ -176,10 +176,10 @@ func (m model) dashboardTab() string {
 			aiLines += " (no recommendations yet)\n"
 		}
 	}
-	aiPanel := borderStyle.Copy().Width(34).Height(10).Render(aiLines)
+	aiPanel := borderStyle.Width(34).Height(10).Render(aiLines)
 
 	// Events from audit log
-	events := borderStyle.Copy().Width(70).Height(6).Render(
+	events := borderStyle.Width(70).Height(6).Render(
 		" LIVE FEED\n" + strings.Repeat("─", 68) + "\n" +
 			"  Dashboard connected to live AppState\n" +
 			fmt.Sprintf("  Agents: %d | Hosts: %d | Vulns: %d | Campaigns: %d\n",
@@ -250,7 +250,7 @@ func (m model) renderKillChain() string {
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", barLen-filled)
 	pc := fmt.Sprintf(" %.0f%%", progress*100)
 
-	return borderStyle.Copy().Width(70).Render(
+	return borderStyle.Width(70).Render(
 		" KILL CHAIN " + strings.Join(items, " │ ") + "\n" +
 			" " + accentStyle.Render(bar) + mutedStyle.Render(pc))
 }
@@ -273,7 +273,7 @@ func (m model) campaignsTab() string {
 		content += "  No active campaigns.\n"
 	}
 
-	return borderStyle.Copy().Width(70).Height(10).Render(content)
+	return borderStyle.Width(70).Height(10).Render(content)
 }
 
 func (m model) agentsTab() string {
@@ -285,9 +285,10 @@ func (m model) agentsTab() string {
 		content += "  ──────── ─────────── ─────────── ──────── ──────\n"
 		for _, a := range agents {
 			statusColor := accentStyle
-			if a.Status == types.AgentStatusDead {
+			switch a.Status {
+			case types.AgentStatusDead:
 				statusColor = dangerStyle
-			} else if a.Status == types.AgentStatusIdle {
+			case types.AgentStatusIdle:
 				statusColor = mutedStyle
 			}
 			content += fmt.Sprintf("  %-8s %-11s %-11s %-8s %s\n",
@@ -298,7 +299,7 @@ func (m model) agentsTab() string {
 		content += "  No active agents.\n"
 	}
 
-	return borderStyle.Copy().Width(70).Height(10).Render(content)
+	return borderStyle.Width(70).Height(10).Render(content)
 }
 
 func (m model) aiTab() string {
@@ -332,7 +333,7 @@ func (m model) aiTab() string {
 		content += mutedStyle.Render("disconnected")
 	}
 
-	return borderStyle.Copy().Width(70).Height(10).Render(content)
+	return borderStyle.Width(70).Height(10).Render(content)
 }
 
 func (m model) logsTab() string {
@@ -351,7 +352,7 @@ func (m model) logsTab() string {
 	content += strings.Repeat("─", 68) + "\n"
 	content += mutedStyle.Render(" [F] Filter [S] Search [/] Find [R] Refresh")
 
-	return borderStyle.Copy().Width(70).Height(12).Render(content)
+	return borderStyle.Width(70).Height(12).Render(content)
 }
 
 func (m model) labTab() string {
@@ -370,7 +371,7 @@ func (m model) labTab() string {
 	content += "  Dashboard: " + accentStyle.Render("http://localhost:3000") + "\n"
 	content += mutedStyle.Render("  [U] Start  [D] Stop  [S] Status")
 
-	return borderStyle.Copy().Width(70).Height(10).Render(content)
+	return borderStyle.Width(70).Height(10).Render(content)
 }
 
 func StartTUI(state *appstate.AppState) error {

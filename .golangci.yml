@@ -1,0 +1,50 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # standard set: errcheck, govet, ineffassign, staticcheck, unused
+  default: standard
+  settings:
+    errcheck:
+      # Fire-and-forget calls that are deliberately best-effort:
+      # best-effort writes to the console and best-effort cleanup closes.
+      # Everything else must be handled for real.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - (io.Closer).Close
+        - (net.Conn).Close
+        - (*os.File).Close
+        - (*net.TCPListener).Close
+        - os.MkdirAll
+        - os.Remove
+        - os.RemoveAll
+        - os.WriteFile
+        - (*exec.Cmd).Run
+        - fmt.Sscanf
+        - encoding/binary.Write
+  exclusions:
+    generated: lax
+    rules:
+      # test files: error returns are often deliberately ignored
+      - path: _test\.go
+        linters:
+          - errcheck
+      # fire-and-forget console writes are intentionally unchecked
+      - source: ^fmt\.Fprint
+        linters:
+          - errcheck
+      # best-effort cleanup: bare Close() statements and deferred closes
+      - source: \.Close\(\)$
+        linters:
+          - errcheck
+      - source: ^defer\s
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt

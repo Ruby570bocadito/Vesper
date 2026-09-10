@@ -279,17 +279,29 @@ func (am *AutoMode) isPhaseComplete(campaign *types.Campaign, d *types.Decision)
 func (am *AutoMode) advanceViaKillchain(campaign *types.Campaign, d *types.Decision) {
 	switch d.Tactic {
 	case "Reconnaissance":
-		am.killChain.ReconComplete(campaign.ID, 1)
+		if err := am.killChain.ReconComplete(campaign.ID, 1); err != nil {
+			am.log.Warnf("ReconComplete: %v", err)
+		}
 	case "Initial Access":
-		am.killChain.DeliveryComplete(campaign.ID, d.Target)
+		if err := am.killChain.DeliveryComplete(campaign.ID, d.Target); err != nil {
+			am.log.Warnf("DeliveryComplete: %v", err)
+		}
 	case "Privilege Escalation":
-		am.killChain.ExploitComplete(campaign.ID, d.Technique)
+		if err := am.killChain.ExploitComplete(campaign.ID, d.Technique); err != nil {
+			am.log.Warnf("ExploitComplete: %v", err)
+		}
 	case "Persistence":
-		am.killChain.InstallComplete(campaign.ID, []string{d.Technique})
+		if err := am.killChain.InstallComplete(campaign.ID, []string{d.Technique}); err != nil {
+			am.log.Warnf("InstallComplete: %v", err)
+		}
 	case "Command and Control":
-		am.killChain.C2Complete(campaign.ID)
+		if err := am.killChain.C2Complete(campaign.ID); err != nil {
+			am.log.Warnf("C2Complete: %v", err)
+		}
 	case "Actions on Objective", "Lateral Movement", "Collection", "Exfiltration":
-		am.killChain.ObjectiveComplete(campaign.ID)
+		if err := am.killChain.ObjectiveComplete(campaign.ID); err != nil {
+			am.log.Warnf("ObjectiveComplete: %v", err)
+		}
 	}
 }
 

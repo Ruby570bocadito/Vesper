@@ -252,23 +252,23 @@ func (wg *WorldGraph) Summary() string {
 
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Nodes: %d | Edges: %d\n", len(wg.nodes), wg.edgeCountUnsafe()))
+	fmt.Fprintf(&sb, "Nodes: %d | Edges: %d\n", len(wg.nodes), wg.edgeCountUnsafe())
 
 	for _, node := range wg.nodes {
 		status := "○"
 		if node.Compromised {
 			status = "●"
 		}
-		sb.WriteString(fmt.Sprintf("  %s %s (%s)", status, node.IP, node.OS))
+		fmt.Fprintf(&sb, "  %s %s (%s)", status, node.IP, node.OS)
 		if node.Hostname != "" {
-			sb.WriteString(fmt.Sprintf(" [%s]", node.Hostname))
+			fmt.Fprintf(&sb, " [%s]", node.Hostname)
 		}
 
 		services := wg.services[node.IP]
 		if len(services) > 0 {
-			sb.WriteString(fmt.Sprintf(" — %d services", len(services)))
+			fmt.Fprintf(&sb, " — %d services", len(services))
 			for _, svc := range services {
-				sb.WriteString(fmt.Sprintf(" %s:%d", svc.Name, svc.Port))
+				fmt.Fprintf(&sb, " %s:%d", svc.Name, svc.Port)
 			}
 		}
 		sb.WriteString("\n")

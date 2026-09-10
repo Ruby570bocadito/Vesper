@@ -100,7 +100,7 @@ Examples:
 					)
 					if out, err := obfCmd.CombinedOutput(); err == nil {
 						os.Remove(output)
-						os.Rename(obfOutput, output)
+						_ = os.Rename(obfOutput, output)
 						evasionApplied = true
 						fmt.Println("  [+] garble obfuscation applied")
 					} else {

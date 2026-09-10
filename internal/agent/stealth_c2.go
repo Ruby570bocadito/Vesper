@@ -141,7 +141,7 @@ func ICMPTunnel(ctx context.Context, data []byte, targetIP string) ([]byte, erro
 
 	magic := []byte("X404")
 	var seq uint32
-	binary.Read(rand.Reader, binary.BigEndian, &seq)
+	_ = binary.Read(rand.Reader, binary.BigEndian, &seq)
 
 	// Build ICMP Echo Request with data payload
 	pkt := make([]byte, 8+len(data))
@@ -154,7 +154,7 @@ func ICMPTunnel(ctx context.Context, data []byte, targetIP string) ([]byte, erro
 	binary.BigEndian.PutUint16(icmpHdr[2:], icmpChecksum(append(icmpHdr, pkt...)))
 	msg := append(icmpHdr, pkt...)
 
-	conn.SetDeadline(time.Now().Add(5 * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
 	if _, err := conn.Write(msg); err != nil {
 		return nil, fmt.Errorf("ICMP write: %w", err)
 	}

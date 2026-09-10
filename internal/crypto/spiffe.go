@@ -59,14 +59,14 @@ func (si *SPIFFEIdentity) SaveToDisk(certPath, keyPath string) error {
 		return err
 	}
 	defer certFile.Close()
-	pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: si.SVID.Raw})
+	_ = pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: si.SVID.Raw})
 
 	keyFile, err := os.Create(keyPath)
 	if err != nil {
 		return err
 	}
 	defer keyFile.Close()
-	pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(si.PrivateKey)})
+	_ = pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(si.PrivateKey)})
 
 	si.CertFile = certPath
 	si.KeyFile = keyPath
