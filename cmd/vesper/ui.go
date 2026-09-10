@@ -113,17 +113,17 @@ func printPanel(title, body string) {
 	fmt.Fprintf(ConsoleOut, "  %s╰%s╯%s\n", cMuted, strings.Repeat("─", width+1), ansiR)
 }
 
-// bannerLines returns the VESPER ASCII art (ANSI Shadow font), unclored.
+// bannerLines returns the VESPER ASCII art (ANSI Shadow font), uncolored.
 // Every surface (console, dashboard, --help, version) renders the same
 // block so the identity stays consistent across modes.
 func bannerLines() []string {
 	return []string{
 		`██╗   ██╗███████╗███████╗██████╗ ███████╗██████╗ `,
 		`██║   ██║██╔════╝██╔════╝██╔══██╗██╔════╝██╔══██╗`,
-		`██║   ██║█████╗  █████╗  ██████╔╝█████╗  ██████╔╝`,
-		`╚██╗ ██╔╝██╔══╝  ██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗`,
-		` ╚████╔╝ ███████╗███████╗██║  ██║███████╗██║  ██║`,
-		`  ╚═══╝  ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝`,
+		`██║   ██║█████╗  ███████╗██████╔╝█████╗  ██████╔╝`,
+		`╚██╗ ██╔╝██╔══╝  ╚════██╗██╔═══╝ ██╔══╝  ██╔══██╗`,
+		` ╚████╔╝ ███████╗███████╗██║     ███████╗██║  ██║`,
+		`  ╚═══╝  ╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝`,
 	}
 }
 

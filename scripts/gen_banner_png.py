@@ -11,7 +11,8 @@ import sys
 from pathlib import Path
 
 VESPER_BIN = sys.argv[1] if len(sys.argv) > 1 else "/tmp/vesper-test"
-OUT = Path("/home/z/my-project/X404X/docs/images/banner.png")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+OUT = REPO_ROOT / "docs" / "images" / "banner.png"
 
 proc = subprocess.run([VESPER_BIN, "version"], capture_output=True, timeout=30)
 raw = proc.stdout.decode("utf-8", errors="replace")

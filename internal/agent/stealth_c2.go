@@ -139,7 +139,7 @@ func ICMPTunnel(ctx context.Context, data []byte, targetIP string) ([]byte, erro
 	}
 	defer conn.Close()
 
-	magic := []byte("X404")
+	magic := []byte("VSPR")
 	var seq uint32
 	_ = binary.Read(rand.Reader, binary.BigEndian, &seq)
 
@@ -169,7 +169,7 @@ func ICMPTunnel(ctx context.Context, data []byte, targetIP string) ([]byte, erro
 
 		// Parse ICMP reply: find magic bytes
 		for i := 20; i < n-4; i++ { // skip IP header
-			if resp[i] == 'X' && resp[i+1] == '4' && resp[i+2] == '0' && resp[i+3] == '4' {
+			if resp[i] == 'V' && resp[i+1] == 'S' && resp[i+2] == 'P' && resp[i+3] == 'R' {
 				// Found magic, extract data
 				dataStart := i + 8 // magic + seq
 				if dataStart < n {
