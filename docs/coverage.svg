@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="230" height="20" role="img">
+  <linearGradient id="g" x2="0" y2="100%"><stop offset="0" stop-color="#bbb"/><stop offset="1" stop-color="#888"/></linearGradient>
+  <clipPath id="r"><rect width="230" height="20" rx="3"/></clipPath>
+  <g clip-path="url(#r)"><rect width="130" height="20" fill="#555"/><rect x="130" width="100" height="20" fill="red"/></g>
+  <text fill="#fff" font-family="Verdana" font-size="11" x="6" y="14">coverage</text>
+  <text fill="#fff" font-family="Verdana" font-size="11" x="136" y="14">16.5%</text>
+</svg>
