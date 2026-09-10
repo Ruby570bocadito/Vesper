@@ -1,10 +1,10 @@
-# X404X — Unified Evasion Engine
+# Vesper — Unified Evasion Engine
 # ================================
 # Integrates evasion techniques from:
 #   - Pulse-C2: AMSI/ETW bypass, indirect syscalls, sleep obfuscation
 #   - Wormy-ML: polymorphic engine, JA3 spoofing, sandbox detection
 #   - Vault-Kernel: kernel-level hiding via IOCTL
-#   - X404X: unified orchestration via Python Bridge
+#   - Vesper: unified orchestration via Python Bridge
 #
 # Profile levels:
 #   none      → no evasion

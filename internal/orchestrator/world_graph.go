@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // WorldGraph maintains a live graph of the target environment.
@@ -20,13 +20,13 @@ type WorldGraph struct {
 
 // WorldNode represents a host in the target network.
 type WorldNode struct {
-	IP          string   `json:"ip"`
-	Hostname    string   `json:"hostname"`
-	OS          string   `json:"os"`
-	Status      string   `json:"status"`
-	ServiceList []string `json:"services"`
+	IP          string         `json:"ip"`
+	Hostname    string         `json:"hostname"`
+	OS          string         `json:"os"`
+	Status      string         `json:"status"`
+	ServiceList []string       `json:"services"`
 	Tags        map[string]int `json:"tags"`
-	Compromised bool     `json:"compromised"`
+	Compromised bool           `json:"compromised"`
 }
 
 // WorldEdge represents a relationship between two hosts.

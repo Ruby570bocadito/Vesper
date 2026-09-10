@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package x404x.v1;
+package vesper.v1;
 
-option go_package = "github.com/ruby570bocadito/x404x/core/proto/gen/bridge;bridgev1";
+option go_package = "github.com/ruby570bocadito/vesper/pkg/proto/gen/bridge;bridgev1";
 
 // BridgeService enables Go agent to call Python modules via IPC
 service BridgeService {

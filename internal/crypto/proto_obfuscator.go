@@ -22,12 +22,12 @@ type ProtoLoader struct {
 }
 
 type ObfuscatedProto struct {
-	Name          string
-	EncodedData   string
-	OriginalSize  int
-	SHA256        string
-	XORKeyFrag    string
-	Compression   bool
+	Name         string
+	EncodedData  string
+	OriginalSize int
+	SHA256       string
+	XORKeyFrag   string
+	Compression  bool
 }
 
 func NewProtoLoader(masterKey []byte) *ProtoLoader {

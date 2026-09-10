@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // KillChainOrchestrator manages automatic phase transitions for campaigns.
@@ -215,14 +215,14 @@ func (ko *KillChainOrchestrator) getTopDecisionForTactic(ctx context.Context, ca
 
 func (ko *KillChainOrchestrator) phaseToTactic(phase types.KillChainPhase) string {
 	mapping := map[types.KillChainPhase]string{
-		types.PhaseRecon:               "Reconnaissance",
-		types.PhaseWeaponization:       "Reconnaissance",
-		types.PhaseDelivery:            "Initial Access",
-		types.PhaseExploitation:        "Privilege Escalation",
-		types.PhaseInstallation:        "Persistence",
-		types.PhaseCommandAndControl:   "Command and Control",
-		types.PhaseActionsOnObjective:  "Actions on Objective",
-		types.PhaseExfiltration:        "Exfiltration",
+		types.PhaseRecon:              "Reconnaissance",
+		types.PhaseWeaponization:      "Reconnaissance",
+		types.PhaseDelivery:           "Initial Access",
+		types.PhaseExploitation:       "Privilege Escalation",
+		types.PhaseInstallation:       "Persistence",
+		types.PhaseCommandAndControl:  "Command and Control",
+		types.PhaseActionsOnObjective: "Actions on Objective",
+		types.PhaseExfiltration:       "Exfiltration",
 	}
 	return mapping[phase]
 }

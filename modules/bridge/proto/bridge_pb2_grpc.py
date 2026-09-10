@@ -35,22 +35,22 @@ class BridgeServiceStub:
             channel: A grpc.Channel.
         """
         self.ExecuteModule = channel.unary_unary(
-                '/x404x.v1.BridgeService/ExecuteModule',
+                '/vesper.v1.BridgeService/ExecuteModule',
                 request_serializer=bridge__pb2.ModuleRequest.SerializeToString,
                 response_deserializer=bridge__pb2.ModuleResponse.FromString,
                 _registered_method=True)
         self.AIAnalyze = channel.unary_stream(
-                '/x404x.v1.BridgeService/AIAnalyze',
+                '/vesper.v1.BridgeService/AIAnalyze',
                 request_serializer=bridge__pb2.AIAnalyzeRequest.SerializeToString,
                 response_deserializer=bridge__pb2.AIAnalyzeResponse.FromString,
                 _registered_method=True)
         self.ReconStream = channel.unary_stream(
-                '/x404x.v1.BridgeService/ReconStream',
+                '/vesper.v1.BridgeService/ReconStream',
                 request_serializer=bridge__pb2.ReconRequest.SerializeToString,
                 response_deserializer=bridge__pb2.ReconResponse.FromString,
                 _registered_method=True)
         self.HealthCheck = channel.unary_unary(
-                '/x404x.v1.BridgeService/HealthCheck',
+                '/vesper.v1.BridgeService/HealthCheck',
                 request_serializer=bridge__pb2.HealthCheckRequest.SerializeToString,
                 response_deserializer=bridge__pb2.HealthCheckResponse.FromString,
                 _registered_method=True)
@@ -113,9 +113,9 @@ def add_BridgeServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'x404x.v1.BridgeService', rpc_method_handlers)
+            'vesper.v1.BridgeService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('x404x.v1.BridgeService', rpc_method_handlers)
+    server.add_registered_method_handlers('vesper.v1.BridgeService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -137,7 +137,7 @@ class BridgeService:
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/x404x.v1.BridgeService/ExecuteModule',
+            '/vesper.v1.BridgeService/ExecuteModule',
             bridge__pb2.ModuleRequest.SerializeToString,
             bridge__pb2.ModuleResponse.FromString,
             options,
@@ -164,7 +164,7 @@ class BridgeService:
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/x404x.v1.BridgeService/AIAnalyze',
+            '/vesper.v1.BridgeService/AIAnalyze',
             bridge__pb2.AIAnalyzeRequest.SerializeToString,
             bridge__pb2.AIAnalyzeResponse.FromString,
             options,
@@ -191,7 +191,7 @@ class BridgeService:
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/x404x.v1.BridgeService/ReconStream',
+            '/vesper.v1.BridgeService/ReconStream',
             bridge__pb2.ReconRequest.SerializeToString,
             bridge__pb2.ReconResponse.FromString,
             options,
@@ -218,7 +218,7 @@ class BridgeService:
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/x404x.v1.BridgeService/HealthCheck',
+            '/vesper.v1.BridgeService/HealthCheck',
             bridge__pb2.HealthCheckRequest.SerializeToString,
             bridge__pb2.HealthCheckResponse.FromString,
             options,

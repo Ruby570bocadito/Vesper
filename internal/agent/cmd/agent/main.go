@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ruby570bocadito/x404x/internal/agent"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/internal/agent"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("[+] X404X Agent %s (os=%s arch=%s)\n", agt.ID(), os.Getenv("GOOS"), os.Getenv("GOARCH"))
+	fmt.Printf("[+] Vesper Agent %s (os=%s arch=%s)\n", agt.ID(), os.Getenv("GOOS"), os.Getenv("GOARCH"))
 	fmt.Printf("[+] Public key: %s\n", agt.PublicKey())
 
 	ctx, cancel := context.WithCancel(context.Background())

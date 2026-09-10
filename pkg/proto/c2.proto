@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package x404x.v1;
+package vesper.v1;
 
-option go_package = "github.com/ruby570bocadito/x404x/core/proto/gen/c2;c2v1";
+option go_package = "github.com/ruby570bocadito/vesper/pkg/proto/gen/c2;c2v1";
 
 // C2Service manages campaigns, agents, and operations
 service C2Service {

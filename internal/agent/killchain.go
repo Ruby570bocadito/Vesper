@@ -22,8 +22,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // KillChainEngine manages automatic kill chain phase transitions.
@@ -147,8 +147,8 @@ type KillChainConditions struct {
 	TargetHost    string
 
 	// Phase 4 -> 5
-	RootObtained   bool
-	PrivescVector  string
+	RootObtained  bool
+	PrivescVector string
 
 	// Phase 5 -> 6
 	PersistenceSet bool

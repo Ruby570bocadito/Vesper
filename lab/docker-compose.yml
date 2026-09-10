@@ -1,4 +1,4 @@
-# RBYHACK Framework — Docker Lab
+# VESPER Framework — Docker Lab
 # ===============================
 # Multi-container lab environment for safe testing.
 #
@@ -18,20 +18,20 @@ services:
     build:
       context: ..
       dockerfile: lab/Dockerfile.attacker
-    container_name: x404x-attacker
+    container_name: vesper-attacker
     hostname: attacker
     networks:
       lab_net:
         ipv4_address: 172.20.0.10
     volumes:
-      - ..:/opt/x404x
+      - ..:/opt/vesper
       - attacker_data:/root
-    working_dir: /opt/x404x
+    working_dir: /opt/vesper
     command: ["sleep", "infinity"]
     depends_on:
       - dashboard
     healthcheck:
-      test: ["CMD-SHELL", "test -d /opt/x404x && test -x /opt/x404x/x404x"]
+      test: ["CMD-SHELL", "test -d /opt/vesper && test -x /opt/vesper/vesper"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -41,7 +41,7 @@ services:
     build:
       context: ..
       dockerfile: lab/Dockerfile.target-linux
-    container_name: x404x-target1
+    container_name: vesper-target1
     hostname: target1
     networks:
       lab_net:
@@ -64,7 +64,7 @@ services:
     build:
       context: ..
       dockerfile: lab/Dockerfile.target-linux
-    container_name: x404x-target2
+    container_name: vesper-target2
     hostname: target2
     networks:
       lab_net:
@@ -81,7 +81,7 @@ services:
 
   dashboard:
     image: node:20-alpine
-    container_name: x404x-dashboard
+    container_name: vesper-dashboard
     hostname: dashboard
     networks:
       lab_net:
@@ -101,7 +101,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: x404x-ollama
+    container_name: vesper-ollama
     hostname: ollama
     networks:
       lab_net:

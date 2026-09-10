@@ -1,6 +1,0 @@
-platform :ios, '15.0'
-target 'X404XAgent' do
-    use_frameworks!
-    pod 'gRPC-Swift', '~> 1.0'
-    pod 'SwiftProtobuf', '~> 1.25'
-end

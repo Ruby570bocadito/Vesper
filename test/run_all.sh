@@ -1,5 +1,5 @@
 #!/bin/bash
-# X404X — Master Test Suite Runner
+# Vesper — Master Test Suite Runner
 # Ejecuta todas las fases de testing en orden
 set -e
 cd "$(dirname "$0")"
@@ -7,7 +7,7 @@ BOLD='\033[1m'; RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN=
 
 echo -e "${CYAN}${BOLD}"
 echo "  ╔═══════════════════════════════════════╗"
-echo "  ║       X404X Complete Test Suite       ║"
+echo "  ║       Vesper Complete Test Suite       ║"
 echo "  ╚═══════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -29,34 +29,10 @@ run_phase() {
 }
 
 # ── F1: Go Core ──
-run_phase "F1" "Go Core Tests" "go/run_core.sh"
+run_phase "F1" "Go Tests (whole module)" "go/run_core.sh"
 
-# ── F2: Go Ransomware ──
-run_phase "F2a" "Go Ransomware Base" "go/run_ransomware.sh"
-run_phase "F2b" "Go BlockZ" "go/run_blockz.sh"
-run_phase "F2c" "Go v210 Apocalipsis" "go/run_v210.sh"
-run_phase "F2d" "Go v26 POMDP" "go/run_v26.sh"
-run_phase "F2e" "Go v27 Blue Pill" "go/run_v27.sh"
-run_phase "F2f" "Go v28 Malice" "go/run_v28.sh"
-run_phase "F2g" "Go v29 Network" "go/run_v29.sh"
-run_phase "F2h" "Go v30 AD+Payroll" "go/run_v30.sh"
-run_phase "F2i" "Go Hydra Vectors" "go/run_hydra_vectors.sh"
-
-# ── F3: Python Bridge ──
+# ── F3: Python Bridge (sandboxed) ──
 run_phase "F3" "Python Bridge" "python/run_bridge.sh"
-
-# ── F4: IntegraciOn ──
-run_phase "F4" "Integration" "integration/run_integration.sh"
-
-# ── F5: E2E ──
-run_phase "F5a" "E2E Kill Chain" "e2e/run_killchain.sh"
-run_phase "F5b" "E2E Campaign" "e2e/run_campaign.sh"
-
-# ── F6: Security ──
-run_phase "F6" "Security & Evasion" "security/run_evasion.sh"
-
-# ── F7: Benchmarks ──
-run_phase "F7" "Benchmarks" "benchmark/run_benchmarks.sh"
 
 # ── Summary ──
 ELAPSED=$((($(date +%s%N) - START)/1000000))

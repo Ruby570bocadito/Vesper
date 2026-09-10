@@ -1,9 +1,9 @@
-# X404X Framework - Configuration Example
+# Vesper Framework - Configuration Example
 # Copy this file to config.yaml and customize for your environment
 
 agent:
   id: ""
-  name: "x404x-agent"
+  name: "vesper-agent"
   c2_server: "localhost"
   c2_port: 8443
   heartbeat_seconds: 30
@@ -22,7 +22,7 @@ server:
 
 database:
   driver: "sqlite"
-  dsn: "x404x.db"
+  dsn: "vesper.db"
   max_conns: 10
   auto_migrate: true
 
@@ -48,7 +48,7 @@ logging:
 
 lab:
   enable: false
-  network: "x404x-lab"
+  network: "vesper-lab"
   subnet: "172.20.0.0/24"
   attacker_ip: "172.20.0.10"
 

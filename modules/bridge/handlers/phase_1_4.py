@@ -1,5 +1,5 @@
 """
-Bridge handlers for X404X Phase 1-4 modules.
+Bridge handlers for Vesper Phase 1-4 modules.
 Exposes BYOVD, DKOM, Anti-Reversing, Anti-Forensics, Hydra vectors,
 C2 hardened, AI, and cross-platform modules via RPC.
 
@@ -121,7 +121,7 @@ def handle_anti_forensics_adv(params: dict) -> dict:
 
 
 def handle_wer_persistence(params: dict) -> dict:
-    payload_dll = params.get("payload_dll", "C:\\Windows\\Temp\\x404x_wer.dll")
+    payload_dll = params.get("payload_dll", "C:\\Windows\\Temp\\vesper_wer.dll")
     return {
         "success": True,
         "hangs_hijack": True,
@@ -193,7 +193,7 @@ def handle_wfp_kernel_dns(params: dict) -> dict:
 def handle_spiffe_mtls(params: dict) -> dict:
     return {
         "success": True,
-        "trust_domain": params.get("trust_domain", "x404x.c2"),
+        "trust_domain": params.get("trust_domain", "vesper.c2"),
         "svid_ttl": "1h",
         "algorithm": "ECDSA P-256 + SPIFFE SVID",
         "features": ["mTLS server", "mTLS client", "peer SPIFFE verification", "cert rotation"],
@@ -287,7 +287,7 @@ def handle_dns_rebinding(params: dict) -> dict:
     return {
         "success": True,
         "technique": "TTL=0 rebind + SOP bypass JS + SSRF via Host headers",
-        "attack_domain": params.get("domain", "cdn.x404x-edge.net"),
+        "attack_domain": params.get("domain", "cdn.vesper-edge.net"),
         "listen_port": 53,
     }
 

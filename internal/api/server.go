@@ -1,4 +1,4 @@
-// Package api provides the REST API and WebSocket server for the X404X dashboard.
+// Package api provides the REST API and WebSocket server for the Vesper dashboard.
 //
 // The API exposes all orchestrator functionality to the Vue 3 dashboard,
 // CLI tools, and external integrations. It uses standard net/http with
@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/ruby570bocadito/x404x/internal/appstate"
-	"github.com/ruby570bocadito/x404x/internal/orchestrator"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/appstate"
+	"github.com/ruby570bocadito/vesper/internal/orchestrator"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 type tokenBucket struct {
@@ -793,7 +793,7 @@ func (s *Server) handleBlueMetrics(w http.ResponseWriter, r *http.Request) {
 		for _, a := range s.state.GetAgents() {
 			if a.Status == "online" || a.Status == "active" {
 				blue = append(blue, map[string]interface{}{
-					"tool": "X404X-Agent", "detected": false, "alert_type": "bypassed",
+					"tool": "Vesper-Agent", "detected": false, "alert_type": "bypassed",
 					"agent_id": a.ID, "timestamp": time.Now().Format(time.RFC3339),
 				})
 			}
@@ -810,7 +810,7 @@ func (s *Server) handleBlueMetrics(w http.ResponseWriter, r *http.Request) {
 // ============================================================
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { 
+	CheckOrigin: func(r *http.Request) bool {
 		// Validate against allowed origins (e.g., localhost and dashboard port)
 		origin := r.Header.Get("Origin")
 		if origin == "" {
@@ -1249,7 +1249,7 @@ Note: Connect Ollama (ollama serve + ollama pull llama3.2) for full AI capabilit
     1. Install Ollama: curl -fsSL https://ollama.com/install.sh | sh
     2. Pull a model:  ollama pull llama3.2  (or mistral, codellama)
     3. Start server:  ollama serve
-    4. Restart X404X: ./x404x dashboard
+    4. Restart Vesper: ./vesper dashboard
   
   The Python bridge will auto-detect Ollama on localhost:11434
   and route all AI requests through the LLM.`
@@ -1283,7 +1283,6 @@ Note: Connect Ollama (ollama serve + ollama pull llama3.2) for full AI capabilit
   Tip: Connect Ollama for real LLM-powered tactical analysis.`, truncate(prompt, 60))
 	}
 }
-
 
 func truncate(s string, max int) string {
 	if len(s) <= max {
@@ -1409,7 +1408,7 @@ func (s *Server) handleAIConfig(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
-		
+
 		if req.Model != "" {
 			s.cfg.AI.Model = req.Model
 			// Force reload in Python Bridge if connected
@@ -1422,7 +1421,7 @@ func (s *Server) handleAIConfig(w http.ResponseWriter, r *http.Request) {
 		if req.Temperature > 0 {
 			s.cfg.AI.Temperature = req.Temperature
 		}
-		
+
 		writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
 		return
 	}
@@ -1469,7 +1468,7 @@ func (s *Server) handlePayloadGenerate(w http.ResponseWriter, r *http.Request) {
 		targetArch = "386"
 	}
 
-	outName := fmt.Sprintf("x404x_%s_%s", targetOS, targetArch)
+	outName := fmt.Sprintf("vesper_%s_%s", targetOS, targetArch)
 	if targetOS == "windows" {
 		outName += ".exe"
 	}
@@ -1490,7 +1489,7 @@ func (s *Server) handlePayloadGenerate(w http.ResponseWriter, r *http.Request) {
 		payloadType = req.Format
 	}
 
-	ldflags := fmt.Sprintf("-s -w -X main.C2Host=%s -X main.C2Port=%s -X main.PayloadType=%s -X main.Stealth=%s", 
+	ldflags := fmt.Sprintf("-s -w -X main.C2Host=%s -X main.C2Port=%s -X main.PayloadType=%s -X main.Stealth=%s",
 		req.Lhost, lportStr, payloadType, stealthFlag)
 
 	logs = append(logs, fmt.Sprintf("Executing compiler: go build -o %s -ldflags=\"%s\"", outPath, ldflags))
@@ -1532,7 +1531,7 @@ func (s *Server) handlePayloadGenerate(w http.ResponseWriter, r *http.Request) {
 
 	// Encode to base64 for frontend delivery
 	encodedB64 := base64.StdEncoding.EncodeToString(binData)
-	
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"status": "success",
 		"size":   sizeStr,

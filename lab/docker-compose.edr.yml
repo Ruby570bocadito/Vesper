@@ -3,11 +3,11 @@ version: '3.8'
 services:
   windows-defender-atp:
     image: mcr.microsoft.com/windows/servercore:ltsc2022
-    container_name: x404x_edr_target
+    container_name: vesper_edr_target
     hostname: WIN-DEFENDER-ATP
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=X404xTestLab2026!
+      - SA_PASSWORD=VesperTestLab2026!
     ports:
       - "3389:3389"
       - "5985:5985"
@@ -20,7 +20,7 @@ services:
 
   siem:
     image: elasticsearch:8.12.0
-    container_name: x404x_siem
+    container_name: vesper_siem
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -33,7 +33,7 @@ services:
 
   kibana:
     image: kibana:8.12.0
-    container_name: x404x_kibana
+    container_name: vesper_kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://edr_lab:9200
     ports:
@@ -44,13 +44,13 @@ services:
 
   sysmon:
     image: ubuntu:22.04
-    container_name: x404x_sysmon_collector
+    container_name: vesper_sysmon_collector
     command: |
       bash -c "
       apt-get update -y && apt-get install -y curl jq auditd &&
       auditctl -e 1 &&
       tail -f /var/log/audit/audit.log | while read line; do
-        curl -s -X POST http://edr_lab:9200/x404x-lab/_doc -H 'Content-Type: application/json' -d \"{\\\"event\\\":\\\"\$$line\\\",\\\"timestamp\\\":\\\"\$$(date -Iseconds)\\\"}\"
+        curl -s -X POST http://edr_lab:9200/vesper-lab/_doc -H 'Content-Type: application/json' -d \"{\\\"event\\\":\\\"\$$line\\\",\\\"timestamp\\\":\\\"\$$(date -Iseconds)\\\"}\"
       done"
     networks:
       edr_lab:
@@ -58,17 +58,17 @@ services:
 
   test_runner:
     image: ubuntu:22.04
-    container_name: x404x_test_runner
+    container_name: vesper_test_runner
     volumes:
-      - ../../:/x404x
+      - ../../:/vesper
       - ./tests:/tests
     command: |
       bash -c "
       apt-get update -y &&
       apt-get install -y python3 python3-pip curl nmap git &&
-      cd /x404x &&
+      cd /vesper &&
       pip3 install -r requirements.txt 2>/dev/null || true &&
-      echo '=== X404X EDR EVASION TEST SUITE ===' &&
+      echo '=== Vesper EDR EVASION TEST SUITE ===' &&
       echo '[TEST 1] Static detection check...' &&
       python3 -c 'import sys; sys.path.insert(0,\".\"); print(\"[PASS] Python modules load without triggering AV\")' &&
       echo '[TEST 2] AMSI bypass verification...' &&

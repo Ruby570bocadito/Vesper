@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ruby570bocadito/x404x/internal/crypto"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/internal/crypto"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 )
 
 const chunkSize = 64 * 1024 // 64KB chunks

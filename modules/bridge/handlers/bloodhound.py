@@ -1,4 +1,4 @@
-# X404X Bridge — BloodHound / SharpHound Collector
+# Vesper Bridge — BloodHound / SharpHound Collector
 # =================================================
 # Collects Active Directory data and maps attack paths.
 # Uses SharpHound (Windows) or Python-based BloodHound collector.
@@ -135,7 +135,18 @@ def _extract_int(text: str, prefix: str) -> int:
 
 
 def _save_json_output(data: str, domain: str) -> str:
-    output_file = f"/tmp/bloodhound_{domain.replace('.','_')}.json"
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from safety import resolve_in_lab
+    output_file = resolve_in_lab(f"tmp/bloodhound_{domain.replace('.','_')}.json")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         f.write(data)
-    return output_file
+    return str(output_file)
+
+
+def register_routes(registry: dict) -> None:
+    """Expose this module's handlers under the 'bloodhound' group."""
+    registry["bloodhound"] = {
+        "collect": collect_bloodhound,
+    }

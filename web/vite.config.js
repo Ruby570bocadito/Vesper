@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-const API_PORT = process.env.X404X_API_PORT || '8443'
-const WS_PORT = process.env.X404X_WS_PORT || API_PORT
+const API_PORT = process.env.VESPER_API_PORT || '8443'
+const WS_PORT = process.env.VESPER_WS_PORT || API_PORT
 
 export default defineConfig({
   plugins: [vue()],

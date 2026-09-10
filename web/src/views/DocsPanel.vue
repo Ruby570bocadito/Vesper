@@ -1,8 +1,8 @@
 <template>
   <div class="glass-panel p-4 space-y-4 overflow-y-auto h-full">
-    <h3 class="text-sm font-mono text-purple">X404X — Architecture & Documentation</h3>
+    <h3 class="text-sm font-mono text-purple">Vesper — Architecture & Documentation</h3>
     <div class="prose prose-invert max-w-none text-sm">
-      <h4 class="text-neon font-mono">X404X Framework</h4>
+      <h4 class="text-neon font-mono">Vesper Framework</h4>
       <p class="text-gray-400">
         Semi-autonomous Red Team platform covering the complete cyber kill chain
         with 11 integrated modules and AI-powered decision making.
@@ -28,9 +28,9 @@
 
       <h4 class="text-neon font-mono mt-4">Quick Commands</h4>
       <div class="text-gray-500 text-xs font-mono space-y-1 mt-2">
-        <div><span class="text-purple">x404x</span> — Launch interactive TUI</div>
-        <div><span class="text-purple">x404x console</span> — msfconsole-style shell</div>
-        <div><span class="text-purple">x404x dashboard</span> — Start API backend</div>
+        <div><span class="text-purple">vesper</span> — Launch interactive TUI</div>
+        <div><span class="text-purple">vesper console</span> — msfconsole-style shell</div>
+        <div><span class="text-purple">vesper dashboard</span> — Start API backend</div>
         <div><span class="text-purple">make build</span> — Build all components</div>
         <div><span class="text-purple">make lab-up</span> — Docker lab environment</div>
       </div>
@@ -50,7 +50,7 @@ const phases = [
 ]
 
 const components = [
-  { name: 'CLI x404x', lang: 'Go', phase: 'All' },
+  { name: 'CLI vesper', lang: 'Go', phase: 'All' },
   { name: 'Orchestrator', lang: 'Go', phase: 'All' },
   { name: 'Decision Engine', lang: 'Go', phase: 'All' },
   { name: 'PostExploitPipeline', lang: 'Go', phase: '4-7' },

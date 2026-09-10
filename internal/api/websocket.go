@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 )
 
 // WSMessage represents a WebSocket message sent to clients.
@@ -48,24 +48,24 @@ func (c *WSClient) Send(msg WSMessage) {
 
 // WSHub manages all WebSocket connections and broadcasts.
 type WSHub struct {
-	log       *logger.Logger
-	clients   map[string]*WSClient
-	register  chan *WSClient
+	log        *logger.Logger
+	clients    map[string]*WSClient
+	register   chan *WSClient
 	unregister chan *WSClient
-	broadcast chan WSMessage
-	mu        sync.RWMutex
-	idCounter int
-	running   bool
+	broadcast  chan WSMessage
+	mu         sync.RWMutex
+	idCounter  int
+	running    bool
 }
 
 // NewWSHub creates a new WebSocket hub.
 func NewWSHub(log *logger.Logger) *WSHub {
 	hub := &WSHub{
-		log:       log,
-		clients:   make(map[string]*WSClient),
-		register:  make(chan *WSClient, 32),
+		log:        log,
+		clients:    make(map[string]*WSClient),
+		register:   make(chan *WSClient, 32),
 		unregister: make(chan *WSClient, 32),
-		broadcast: make(chan WSMessage, 256),
+		broadcast:  make(chan WSMessage, 256),
 	}
 
 	go hub.run()

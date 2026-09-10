@@ -1,4 +1,4 @@
-// Package agent implements the unified X404X implant.
+// Package agent implements the unified Vesper implant.
 //
 // The agent is the field-deployed component that runs on target machines.
 // It communicates with Pulse-C2 via encrypted gRPC, invokes local modules
@@ -32,10 +32,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ruby570bocadito/x404x/internal/crypto"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/crypto"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // Agent is the unified implant.

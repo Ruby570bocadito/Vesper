@@ -42,7 +42,7 @@ func TestSessionEncryptDecrypt(t *testing.T) {
 	}
 
 	// Encrypt on Alice's side, decrypt on Bob's side
-	plaintext := []byte("hello, this is a secret message for the X404X framework")
+	plaintext := []byte("hello, this is a secret message for the Vesper framework")
 	encrypted, err := aliceSession.Encrypt(plaintext)
 	if err != nil {
 		t.Fatalf("Encrypt: %v", err)
@@ -103,7 +103,7 @@ func TestDeriveKey(t *testing.T) {
 	aliceSession, _ := NewSession(alice, bob.PublicKey)
 	bobSession, _ := NewSession(bob, alice.PublicKey)
 
-	ctx := []byte("x404x-agent-subkey")
+	ctx := []byte("vesper-agent-subkey")
 
 	key1, err := DeriveKey(&aliceSession.sharedKey, ctx)
 	if err != nil {

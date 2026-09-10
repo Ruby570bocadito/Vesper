@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# X404X — Automated Setup Script
+# Vesper — Automated Setup Script
 # =================================
 # Installs all dependencies and prepares the environment.
 # Usage: bash scripts/setup.sh [--dev] [--docker]
@@ -29,7 +29,7 @@ done
 
 echo ""
   echo "  ╔══════════════════════════════════════════════╗"
-  echo "  ║     X404X — Setup                          ║"
+  echo "  ║     Vesper — Setup                          ║"
   echo "  ╚══════════════════════════════════════════════╝"
 echo ""
 
@@ -106,7 +106,7 @@ if [ ! -f "config.yaml" ]; then
 fi
 
 echo ""
-ok "X404X setup complete!"
+ok "Vesper setup complete!"
 echo ""
 echo "  Next steps:"
 echo "    make lab-up    → Start the Docker lab environment"

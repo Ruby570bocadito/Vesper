@@ -2,6 +2,7 @@
 """Tests for the Python bridge RPC protocol format."""
 import json
 import sys
+import tempfile
 import os
 import unittest
 
@@ -59,17 +60,15 @@ class TestBridgeProtocol(unittest.TestCase):
         self.assertIn("not found", parsed["error"])
 
     def test_all_handler_function_names(self):
-        """Verify all handler files export register_routes."""
+        """Verify every shipped handler module exists and exports register_routes."""
         handlers_dir = os.path.join(os.path.dirname(__file__), '..', 'handlers')
-        expected_files = [
-            'ransomware', 'ransomware_advanced', 'ransomware_blockz',
-            'ransomware_v26', 'ransomware_v27', 'ransomware_v28',
-            'ransomware_v29', 'ransomware_v210', 'phase_1_4',
-        ]
+        expected_files = ['attacks', 'phase_1_4', 'cred_dump', 'bloodhound', 'attack_navigator']
 
         for fname in expected_files:
             module_path = os.path.join(handlers_dir, f"{fname}.py")
             self.assertTrue(os.path.exists(module_path), f"Missing: {module_path}")
+            src = open(module_path).read()
+            self.assertIn('register_routes', src, f"{fname}.py does not export register_routes")
 
     def test_bridge_register_all_modules(self):
         """Verify all modules can be registered without error."""
@@ -78,28 +77,19 @@ class TestBridgeProtocol(unittest.TestCase):
 
         registry = {}
 
-        modules_to_try = [
-            'ransomware', 'ransomware_advanced', 'ransomware_blockz',
-            'ransomware_v26', 'ransomware_v27', 'ransomware_v28',
-            'ransomware_v29', 'ransomware_v210',
-        ]
+        os.environ.setdefault('VESPER_LAB_ROOT', tempfile.mkdtemp(prefix='vesper_proto_test_'))
+        modules_to_try = ['attacks', 'phase_1_4', 'cred_dump', 'bloodhound', 'attack_navigator']
 
         for mod_name in modules_to_try:
             try:
                 mod = __import__(mod_name)
                 if hasattr(mod, 'register_routes'):
                     mod.register_routes(registry)
-            except ImportError:
-                pass
-
-        try:
-            import phase_1_4
-            phase_1_4.register_routes(registry)
-        except ImportError:
-            pass
+            except ImportError as e:
+                self.fail(f"handler module {mod_name} failed to import: {e}")
 
         total = sum(len(handlers) for handlers in registry.values())
-        self.assertGreater(total, 50, f"Expected >50 total handlers, got {total}")
+        self.assertGreater(total, 20, f"Expected >20 total handlers, got {total}")
 
     def test_bridge_protocol_compatibility(self):
         """Test forward/backward compatibility of protocol fields."""

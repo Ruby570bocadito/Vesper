@@ -1,248 +1,63 @@
 # Changelog
 
-All notable changes to X404X will be documented in this file.
+Todas las fechas son ISO-8601. Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
-## [v2.5] — 2026-06-07
+## [1.0.0] — 2026-09-10 — "Vesper"
 
-### Added — Block Z: El Umbral de la Perdición (14 Modules)
+Primera versión bajo el nombre **Vesper**. Esta es una **remodelación
+completa** del proyecto anterior (X404X): el árbol se reconstruyó alrededor
+de lo que compila, se testea y se documenta de verdad.
 
-#### Z.1 — Genetic Evolution (Darwinian Malware)
-- **`genetic_evolution.go`**: Population of 8 agents, crossover recombination with system DLLs (kernel32, ntdll, libc, chrome.exe), 15% mutation rate, fitness evaluation via AV evasion + sandbox detection, natural selection, 8-generation evolution loop
+### Añadido
+- `cmd/vesper/safety.go` + `modules/bridge/safety.py`: postura solo-laboratorio
+  real — sandbox `VESPER_LAB_ROOT` para toda E/S del bridge, puerta de
+  autorización (`--yes-i-am-authorized` / `VESPER_AUTHORIZED=1`), kill switch
+  en runtime (`VESPER_KILLSWITCH=1`, `kill_switch EMERGENCY_STOP`), protección
+  de bind (fuerza 127.0.0.1 sin autorización)
+- Endpoint `/ws/terminal` funcional: el terminal xterm.js del dashboard ejecuta
+  comandos de la consola real vía WebSocket
+- `modules/bridge/tests/test_safety.py`: contrato de seguridad del sandbox
+- `register_routes()` uniforme en los 5 módulos de handlers restantes
+- README bilingüe (EN/ES) con GIFs de demo reales
 
-#### Z.2 — Deepfake Identity Assassination
-- **`deepfake_identity.go`**: ONNX face+voice pipeline, harvest media from system, generate CEO impersonation videos (<200ms latency target), extortion via fake authorization commands (transfer, merger, escrow)
+### Cambiado
+- **21 `go.mod` + `go.work` → 1 módulo raíz**: `go build ./...` funciona desde
+  la raíz por primera vez en la historia del proyecto
+- Protobufs regenerados (protoc 27.3 / protoc-gen-go 1.36): paquete
+  `vesper.v1`, `go_package` consistente con el módulo (antes `core/proto/gen`,
+  una ruta que nunca existió)
+- `cmd/implant`: eliminados los modos de payload destructivos; solo beacon
+  con jitter y backoff
+- `internal/c2server`: corregido el drift proto (`DecisionUpdate` no tiene
+  `approved`; ahora: auto-aprobado salvo `requires_approval`)
+- UI del CLI reconstruida (`cmd/vesper/ui.go`): paleta ANSI completa, tablas,
+  paneles, banners — el fichero original se perdió en un cleanup con regex
+- `requirements.txt` recortado a lo que el bridge importa de verdad;
+  extras movidos a `requirements-optional.txt`
+- Documentación reescrita desde la realidad medida (handlers, rutas, tests)
 
-#### Z.3 — Covert SCADA Sabotage
-- **`scada_covert.go`**: Gradual parameter drift (0.5°C/day for 250 days), Modbus write single register, false maintenance log generation, cover story disguise as routine calibration
+### Eliminado (lo que no se podía defender)
+- `internal/ransomware` completo (132 ficheros, ~34.600 LOC, 59% del Go del
+  repo; 4 sub-paquetes no compilaban) y sus 8 módulos-wrappers en el agente
+- 8 handlers Python de "ransomware" — dos de ellos **escribían en ficheros
+  reales del árbol** al correr los tests (backdoor plantado en fuentes,
+  notas de rescate sobre READMEs)
+- `mobile/` (38 LOC abandonadas con C2 hardcodeado caído), `internal/fusion`,
+  `internal/bridge` (stub muerto), `pkg/shared/database` (Python huérfano)
+- 8 directorios de plugins vacíos (submódulos nunca inicializados) y `.gitmodules`
+- `ROADMAP.md` ficción, CHANGELOG no cronológico con capacidades inexistentes,
+  `test/security/run_evasion.sh` (solo imprimía nombres de funciones)
 
-#### Z.4 — Network Firmware Worm (Tenia Digital)
-- **`firmware_worm.go`**: Scan routers/switches/firewalls via SNMP/Telnet/SSH/HTTP, flash backdoor into firmware, hidden partition for traffic capture, magic SYN packet activation, survive firmware updates via persistent hooks
+### Corregido
+- CLI no compilaba (símbolos `cSuccess/cPrimary/ansiR/printErr` inexistentes)
+- Secuencias ANSI truncadas en `install.sh` y runners de `test/`
+- Tests que ensuciaban el repositorio → sandbox temporal en toda la suite Python;
+  el CI falla si algún test muta un fichero trackeado
+- CI teatral (jobs contra rutas inexistentes con `|| true`) → CI real: compila
+  ambos binarios, corre todas las suites y verifica que el repo queda limpio
 
-#### Z.5 — Medical Implant Attacks
-- **`medical_attack.go`**: Detect Medtronic/Boston Scientific/Abbott/Baxter software, 9 CVEs (pacemaker shutdown, insulin overdose, neurostimulator blast, ventilator stop), evidence deletion from clinical logs
+## [0.x] — Proyecto anterior (X404X)
 
-#### Z.6 — AI Model Poisoning
-- **`model_poisoning.go`**: Inject poisoned images into ML pipelines, flip labels (tumor→healthy, malware→benign), deploy Sleeper backdoor model (90-day activation), swap labels in JSON manifests
-
-#### Z.7 — Disinformation Campaign
-- **`disinformation.go`**: 6 attack categories (harassment, financial rumor, division sowing, fake meetings, reputation attack, recruitment sabotage), Outlook/Slack/intranet/calendar injection, LLM integration for realistic corporate language
-
-#### Z.8 — Air-Gap Jumping
-- **`airgap_jump.go`**: Ultrasound exfiltration (>20kHz via speaker modulation), LED hard drive activity modulation (OOK), bidirectional bridge establishment, chunked large file transfer, FSK modulation
-
-#### Z.9 — Post-Quantum Encryption
-- **`post_quantum.go`**: Kyber-1024 lattice-based KEM + AES-256-GCM hybrid, quantum-safe key encapsulation, generate Kyber keypairs, encrypt with quantum-safe envelope, ransom note: "Not even quantum computing can save you"
-
-#### Z.10 — Dead Man's Switch
-- **`deadman_switch.go`**: 48-hour countdown heartbeat, auto-trigger apocalypse: encrypt all, delete keys, overwrite firmware, publish data, broadcast manifesto, DDoS, maximum destruction
-
-#### Z.11 — False Flag APT Framing
-- **`falseflag_apt.go`**: 3 APT profiles (Lazarus/DPRK, APT29/Russia, APT41/China), plant mutexes, C2 domains in hosts file, tool binaries with MZ headers, code comments in Russian/Chinese/Korean, generate Mandiant-style report
-
-#### Z.12 — EDR Control & Self-Deployment
-- **`edr_control.go`**: Detect 10 EDRs (CrowdStrike, Carbon Black, Defender ATP, SentinelOne, Cortex XDR, Trend Micro, McAfee, Sophos, Elastic, BitDefender), silence alerts, stop services, self-deploy via EDR console
-
-#### Z.13 — Financial Market Attack
-- **`financial_attack.go`**: Harvest insider info (earnings, mergers, clinical trials), place put options before ransomware, trigger stock crash, dual revenue: ransom + options profit
-
-#### Z.14 — IoT Physical Chain Attack
-- **`iot_physical_chain.go`**: 4 attack scenarios (hospital, office building, factory, power grid), protocols: BACnet, Modbus, MQTT, LonWorks, KNX, cascade failure triggering
-
-### Integration
-- **`blockz_engine.go`**: Master orchestrator for all 14 Block Z modules, sequential execution with context cancellation
-- **`core/agent/blockz_module.go`**: 11 Agent Module implementations (BlockZ, Genetic, Deepfake, Medical, DeadMan, EDR, FalseFlag, Quantum, AirGap, IoTChain, Financial)
-- **`modules/bridge/handlers/ransomware_blockz.py`**: 14 Python RPC handlers
-- **`core/appstate/state.go`**: 14 new ModuleDef entries under type "blockz"
-
-### Changed
-- Total módulos consola: 62 → 76
-
-## [v2.4] — 2026-06-06
-
-### Added — 14 Advanced Ransomware Modules (Blocks 1-4 + Bonus)
-
-#### Block 1: Psychological & Reputational
-- **Hope Trap** (`psychological_advanced.go`): Partial decryption of 5 recoverable-looking media/doc files, forensic tool monitor (FTK/Encase/Autopsy), triggers re-encryption with doubled ransom on detection. Deploy fake decryptor binaries that destroy remaining keys if executed
-- **Identity Destruction** (`identity_destruction.go`): Harvest browser cookies/sessions (Chrome/Firefox/Edge), hijack accounts (email/Amazon/Facebook/LinkedIn/Twitter/GitHub/Slack/Outlook), post humiliating content, send phishing emails to contacts, purchase with saved cards, enable attacker 2FA
-- **Inverse RaaS** (`raas_inverse.go`): Tor-based panel inviting other attackers, multi-ransom notes from different groups, Shamir key shard distribution, per-group encryption variants
-
-#### Block 2: Pandemic Propagation
-- **Multi-Platform Worm** (`multiplatform_worm.go`): Scans network via SSH/SMB/HTTP, deploys platform-specific payloads (Win PS1, Linux shell, macOS Automator, IoT shell). Docker container escape, Kubernetes pod spread, SMB worm propagation. IoT botnet scanning via Telnet/RTSP/Dahua ports with DDoS capability
-- **Supply Chain Poison** (`supply_chain.go`): Finds software updaters (NP++, 7-Zip, VLC, Python, Node.js), replaces with trojan. Poisons pip.conf/npmrc/NuGet.Config for internal Artifactory/Nexus repos. Scans for .git repos, poisons hooks, scorches repo READMEs. Deploys fake emergency patches to S3/Azure/Contact emails
-- **Cloud Exploit** (`cloud_exploit.go`): Harvests AWS/Azure/GCP credentials from disk. Launches EC2 instances (3 regions), creates malicious AMIs, Azure VMs with startup scripts, GCP compute instances. Creates public S3 bucket with fake patch website
-- **Bluetooth/Wi-Fi Direct** (`bluetooth_prop.go`): BT device scanning via PowerShell/hcitool/system_profiler. BlueBorne exploit, BLE MITM via gatttool, Apple SIP bypass (CVE-2021-30892), malicious APK push. Activates rogue Wi-Fi hotspot, scans WiFi Direct peers for KRACK attacks
-
-#### Block 3: Physical & Infrastructure Sabotage
-- **SCADA/PLC Attack** (`scada_attack.go`): Detects SCADA software (Siemens/Rockwell/Schneider/CODESYS/Wonderware), scans for PLCs on Modbus/S7/CIP/EtherNet/IP ports. Modbus stop/write coil/overwrite logic commands, S7 stop/DB delete/flash firmware, CIP generic commands. Modbus unit ID brute force
-- **Hardware Kill** (`hardware_kill.go`): Firmware access detection (BIOS/UEFI/SMBIOS/WMI/MSR). CPU overvoltage via MSR manipulation, GPU fan kill with nvidia-smi, fan controller disable, thermal throttling disable. Infinite CPU burn loop on all cores, BIOS flash corruption
-- **Network Poison** (`network_poison.go`): ARP spoofing via arpspoof/New-NetNeighbor, MITM proxy with iptables/netsh redirect, content injection into HTTP/HTTPS pages. Root CA generation (RSA-4096) + installation into system trust store. Captive portal with DNS redirect, SSL strip attack
-
-#### Block 4: Automutation & Resilience
-- **DNA Mutation** (`dna_mutation.go`): Extracts SHA256 fingerprints from system DLLs (kernel32, ntdll, user32, libc, ssl), hybridizes malware genome with legit code via crossover recombination. ROP gadget generation, 15% junk code NOP sled insertion, per-machine XOR key derivation from volume serial
-- **Bootkit** (`bootkit.go`): MBR payload generation (512-byte real-mode stub), UEFI PE stub generation. MBR infection via raw disk write, disk write interception via filter driver/dm-setup. Bootkit stage2 with C2 endpoint + reinfection interval. Fake SMART error display
-- **Blockchain C2** (`blockchain_c2.go`): Bitcoin OP_RETURN command extraction from blockstream.info API. AES-GCM encrypted commands embedded in BTC transactions. Monitoring loop, command queue with execution tracking. Commands: destroy, encrypt_more, change_note, exfil, propagate, self_destruct
-
-#### Bonus: Survivor Game
-- **Survivor Game** (`survivor_game.go`): Discovers workstations on network, broadcasts game start message via wall/msg, eliminates random stations every 90 seconds with full-screen lock, announces winner with free decryption key. Double ransom for eliminated participants
-
-### Added (Files)
-- `core/ransomware/psychological_advanced.go`, `identity_destruction.go`, `raas_inverse.go` — Block 1
-- `core/ransomware/multiplatform_worm.go`, `supply_chain.go`, `cloud_exploit.go`, `bluetooth_prop.go` — Block 2
-- `core/ransomware/scada_attack.go`, `hardware_kill.go`, `network_poison.go` — Block 3
-- `core/ransomware/dna_mutation.go`, `bootkit.go`, `blockchain_c2.go` — Block 4
-- `core/ransomware/survivor_game.go` — Bonus
-- `core/ransomware/engine_extended.go` — Master orchestrator for all 14 new phases
-- `core/agent/ransomware_advanced_module.go` — 10 new agent modules (Advanced, HopeTrap, Identity, RaaS, Worm, SCADA, Hardware, Bootkit, Blockchain, Survivor)
-- `modules/bridge/handlers/ransomware_advanced.py` — 17 new Python RPC handlers for all blocks
-- `core/ransomware/types.go` — 16 new phases, 30+ new config fields, extended report struct
-- `core/appstate/state.go` — 16 new ModuleDef entries registered
-
-### Changed
-- `core/ransomware/types.go` — Phase constants expanded from 7 to 23, config fields from 20 to 55, report fields from 13 to 24
-
-## [v2.3] — 2026-06-06
-
-### Added (Ransomware Engine — 8 features, 13 files)
-- **Double extortion + selective exfiltration**: Heuristic content scanner (19 regex patterns for DNI, passports, credit cards, contracts, PST/OST, MDF/SQL, API keys, AWS keys, private keys, health data). ZIP with ChaCha20-password encrypted packaging. Exfil channels: DNS TXT fragments, CDN stego, S3 with stolen credentials. Shaming post generator + .onion negotiation URL
-- **System poisoning & irreversible destruction**: MFT overwrite via raw volume access (`\\.\C:`), UEFI NVRAM/bootmgfw sabotage, shadow copies deletion (vssadmin/wmic/bcdedit), cloud backup API destruction (Veeam/Acronis/CommVault agents kill + config wipe), free space wiping, Linux MBR corruption
-- **Propagation engine**: 6 exploit modules (Zerologon CVE-2020-1472, ProxyNotShell CVE-2023-23397, PrintNightmare CVE-2021-34527, BlueKeep CVE-2019-0708, EternalBlue MS17-010, SMBGhost CVE-2020-0796). Outlook COM propagation via fake thread conversations. WSUS/SCCM update poisoning, NuGet/NPM registry poisoning, Git hook poisoning
-- **Real-time psychological attack**: TOPMOST full-screen countdown window (PowerShell WinForms), webcam capture via WIA COM, printer spam via Get-Printer, TTS audio threats via System.Speech, live file deletion display, desktop notification countdown loop
-- **Anti-analysis & anti-IR**: 15 tool/process kill list (Procmon, Wireshark, x64dbg, IDA, Ghidra, etc.), PE header corruption, kernel driver kill (kprocesshacker.sys), sandbox hostname detection, kernel debugger detection (WMI + PowerShell), 2-hour sleep mode, C2 steganography via CDN image LSB + EXIF metadata
-- **Binary polymorphism**: JIT mutation loop (function reordering, constant changes, junk code insertion), ROP gadget generation with NOP sleds, pre-packaging with per-machine key derivation (volume serial → SHA256 → XOR key)
-- **Trust exploitation**: Self-signed code signing cert generation (RSA 4096), PFX/P12 certificate search on filesystem, WSUS fake update creation, SCCM malicious application deployment, NuGet/NPM registry poisoning, Git hook poisoning (pre-commit/post-commit/pre-push/post-merge)
-- **Hydra multi-layer encryption**: 3× RSA-4096 key pairs, Shamir's Secret Sharing (3-of-3 split of master key), AES-256-GCM file encryption with double layer (AES-GCM + ChaCha20-Poly1305) for critical files (.mdf, .vhd, .pst), separate key per file, 3 shards sent to 3 independent C2 endpoints
-
-### Added (Files)
-- `core/ransomware/` — 12 Go files: engine.go, types.go, scanner.go, hydra.go, extortion.go, destruction.go, propagation.go, psychological.go, antianalysis.go, polymorph.go, trust.go, go.mod
-- `core/agent/ransomware_module.go` — Agent Module interface for ransomware execution
-- `modules/bridge/handlers/ransomware.py` — Python bridge handler (8 RPCs: execute, scan, encrypt, exfil, status, decrypt, note, propagate, destruct)
-- `core/appstate/state.go` — 11 new ransomware ModuleDef entries in module registry
-- `go.work` — Added `./core/ransomware`
-
-### Added
-- gRPC C2 Server with split service interfaces: `AgentService` (CheckIn, CommandStream, Heartbeat, Exfiltrate) and `C2Service` (ListAgents, GetAgent, KillAgent, CreateCampaign, GetCampaign, ListCampaigns, PauseCampaign, ResumeCampaign, DecisionFeed, GetMetrics)
-- Real gRPC implementations in `core/c2server/agent_service.go` and `core/c2server/c2_service.go`
-- Decision Engine integration in console exploit handler (Bridge + offline fallback)
-- AppState-connected TUI (live agents, hosts, vulns, campaigns, decisions)
-
-### Fixed
-- C2 `server.go` rewritten from raw TCP to full `grpc.Server` with service registration
-- Agent `connector.go` Send/Recv now use bidirectional `CommandStream` (was unconnected)
-- Console `cmdExploit` — removed fake eternalblue/redis_unauth switch-case; replaced with generic Bridge + Decision Engine orchestration
-- TUI — 100% hardcoded demo data replaced with live AppState queries
-- `main.go` — TUI mode now initializes AppState and passes it to StartTUI
-- Agent and c2server `go.mod` files updated with proper replace directives for proto dependencies
-
-### Changed
-- Console exploit handler: category-based dispatch (privesc, recon, post, auxiliary) with Bridge-first, offline-fallback strategy
-- TUI kill chain rendering: dynamically derived from campaign phase instead of fixed
-- All dashboard tabs render live state instead of hardcoded data
-
-## [v2.0] — 2026-06-06
-
-### Added
-- 14 new modules: credential_dump, bloodhound, responder, web_scan, cloud (AWS/Azure/GCP), cleanup, obfuscate, exfiltrate, phantom_xss, phantom_sw_persist, phantom_browser_mesh, phantom_socks5, payload_obfuscate
-- PhantomWeb browser-native implant integration (XSS, Watering Hole, Service Worker, Browser Mesh, SOCKS5)
-- Payload Builder CLI: `x404x payload generate` (multi-arch cross-compile)
-- Listeners management: `x404x listeners` (HTTP/HTTPS/DNS/ICMP/SMB/TCP/WS/DoH)
-- SQLite persistence (6 tables) via modernc.org/sqlite (pure-Go, no CGO)
-- Real Module implementations (PostExploitModule, PrivescScanModule, ReconModule)
-- Agent ↔ C2 gRPC connector wired in Agent
-- PhantomWeb Pinia store + Browser Mesh dashboard tab
-- 4 evasion profiles: none, balanced, stealth, maximum
-- Campaign report generator (JSON/MD/HTML/PDF) with MITRE ATT&CK mapping
-- Exfiltration manager (chunked 64KB encrypted transfer)
-- Rise-Privilege binary wrapper (auto-compile, Scan/Exploit/FullChain)
-- Auto-mode AI (auto-approve decisions when confidence > 0.85)
-- CTF scenario: Active Directory Lab (6 containers)
-- Bridge handlers: 11 → 19 (+8 new)
-- Console modules: 28 → 42 (+14 new)
-- Dashboard tabs: 7 → 8 (+Browser Mesh)
-- Pinia stores: 6 → 7 (+phantom)
-
-### Fixed
-- Agent connector wired to C2 (was unassigned)
-- escalate() now actually runs Rise-Privilege binary
-- installCron() and installSystemd() now write real persistence
-- Phantom API endpoints registered
-- BrowserMesh.vue: 0% hardcodeo (uses phantom store)
-- Bridge sys.path for proper module imports
-- PROJECT_ROOT auto-added to Python path
-
-### Security
-- LICENSE added (MIT)
-- SECURITY.md added
-- Kill switch, geofencing, auto-destruct, max infections, no persistence by default
-
-## [v3.2] — 2026-06-12
-
-### Added
-- **gRPC Bridge**: migrated Python bridge from TCP/JSON to full gRPC with protobuf schemas
-- **144 bridge handlers**: 9 ransomware modules + reporting + phase_1_4 auto-registered
-- **73 evasion techniques**: complete professional evasion suite
-  - Ring -1: BluePill hypervisor (VT-x/AMD-V)
-  - Ring 0: DKOM EPROCESS unlink, BYOVD drivers (5), kernel callback rootkit
-  - Ring 3: Indirect syscalls, HW breakpoints AMSI/ETW, Ekko/Foliage sleep obfuscation
-  - Call stack spoofing, P2P C2 mesh, domain fronting + DNS tunneling
-  - NIC stealth (retransmit stuffing, RTP gap, TCP stealth), malleable C2 profiles
-  - UEFI persistence (CVE-2022-21894 SecureBoot bypass), WMI fileless persistence
-  - Anti-memory forensics (encrypted blobs, PAGE_NOACCESS, anti-dump detection)
-  - Garble build integration, staged payload RSA-OAEP, Windows service autorecovery
-- **Dashboard**: campaign timeline view, event filtering, expandable details
-- **MITRE ATT&CK**: Navigator layer JSON export (35 techniques, tactic color-coding)
-- **CI/CD**: coverage reporting (go -coverprofile + pytest --cov), Codecov integration
-- **Docs**: ARCHITECTURE v3.2, API_REFERENCE, DEPLOYMENT guide, CONTRIBUTING updated
-- **Test harness**: 21 Python unit tests, 107/107 smoke tests, 28 Go test packages
-
-### Fixed
-- Scan deadlock: channels properly closed after WalkDir
-- Crypto: RSA-OAEP encrypts per-file keys (v3 header), no plaintext keys
-- Config validation in NewEngine, default values for all fields
-- Command injection blocked in bridge recon_handler
-- Beacon: exponential backoff + jitter (was `time.Sleep(30s)` loop)
-
-
-## [v3.0] — 2026-06-10
-
-### Added
-- Monorepo reorganization: `core/` → `internal/` (15 packages)
-- Orchestrator wired to Agent via Dispatcher, Registry unified
-- WorldGraph discovers from live agents (no demo data)
-- AI.Enabled + AutoApproval, Python Bridge connected
-- 5 kill chain phases cabled (Recon→Exploit→Install→C2→Actions)
-- 154+ modules across 45 categories
-- Vue 3 dashboard rebuilt (10 panels, WebSocket live feed)
-- gRPC AgentService + C2Service + BridgeService (Go stubs)
-- SPIFFE mTLS, Swagger/OpenAPI spec
-
-
-## [v2.10] — 2026-06-08
-
-### Added
-- Simulation disabled (real mode by default)
-- GitHub Actions CI/CD
-- Python unit tests (21 tests across 8 handler modules)
-- Digital binary signing (x404x.sig)
-- Docker client integration
-- Protos regenerated for agent/c2/bridge/common
-- Dashboard Vue3 built (40 modules, 124KB JS)
-
-### Fixed
-- All integration tests pass (7/7)
-- Binary: 26.7MB, 0 errors
-
-
-## [v1.0] — 2026-06-05
-
-### Added
-- Initial release: CLI (Cobra + Bubble Tea + msfconsole shell), Dashboard (Vue 3), API (REST + WebSocket)
-- Orchestrator: Decision Engine (Rules 25% + A* 35% + AI 40%), WorldGraph, EventBus
-- Agent: Go implant, gRPC Connector, BridgeClient (Python↔Go IPC)
-- Crypto: X25519 + XChaCha20-Poly1305
-- gRPC Proto: 4 services (Agent, C2, Bridge, Common)
-- Python Bridge: 11 modules (recon, AI, privesc, persist, worm, relay, blue, evasion, report, exfil, health)
-- 11 submodules integrated
-- Docker lab (5 containers)
-- SQLAlchemy models (11 tables)
-- CI/CD (GitHub Actions)
-- Documentation: Architecture, Roadmap, CLI Reference, TFG Memory, Benchmarks
+Historial arqueológico disponible en `git log` (repositorio original
+`Ruby570bocadito/X404X`). Los números de versión 2.x/3.x de aquel changelog
+no se reconocen como releases de Vesper.

@@ -1,37 +1,12 @@
-# X404X — Python dependencies
+# Vesper — Python bridge dependencies
 # Install: pip install -r requirements.txt
+#
+# Kept intentionally lean: only what the bridge imports at runtime.
+# Optional extras live in requirements-optional.txt.
 
-# Bridge Core
+# Bridge gRPC transport (modules/bridge/bridge_grpc.py)
 grpcio>=1.64.0
-grpcio-tools>=1.64.0
 protobuf>=5.26.0
-cryptography>=41.0
-numpy>=1.24
-requests>=2.31
-PyYAML>=6.0
-scapy>=2.5.0
-websocket-client>=1.6.0
-rich>=13.0
-click>=8.0
 
-# AI & Deep Learning
-ollama>=0.1.0
-torch>=2.0
-onnxruntime>=1.16
-opencv-python>=4.8
-dlib>=19.24
-
-# Document Export
-fpdf2>=2.7.0
-python-docx>=1.1.0
-
-# QR Generation
-qrcode>=7.4
-Pillow>=10.0
-
-# Modbus/SCADA
-pymodbus>=3.5.0
-
-# Testing
+# Testing (modules/bridge/tests)
 pytest>=8.0
-pytest-asyncio>=0.23.0

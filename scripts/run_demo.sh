@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# X404X — DEMO MODE (dry-run + simulation de punta a punta)
+# Vesper — DEMO MODE (dry-run + simulation de punta a punta)
 # Alternativa cross-platform al run_simulation.bat de Windows
 # Ejecuta toda la cadena ofensiva sin acciones reales.
 # Uso: bash scripts/run_demo.sh [--full]
@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 echo "============================================================"
-echo " X404X — FULL DEMO (DRY-RUN + SIMULATION)"
+echo " Vesper — FULL DEMO (DRY-RUN + SIMULATION)"
 echo "============================================================"
 echo ""
 echo " Seguridad:"
@@ -24,7 +24,7 @@ FULL_MODE="${1:-}"
 
 # ── 1. Compilar agentes ──────────────────────────────────────────
 echo "[1/5] Compilando agentes..."
-(cd "$PROJECT_ROOT" && go build -o /dev/null ./cmd/x404x/ 2>/dev/null) || echo "  [!] Go no disponible — saltando compilación"
+(cd "$PROJECT_ROOT" && go build -o /dev/null ./cmd/vesper/ 2>/dev/null) || echo "  [!] Go no disponible — saltando compilación"
 
 # ── 2. Iniciar bridge Python ─────────────────────────────────────
 echo "[2/5] Iniciando bridge Python (dry-run)..."

@@ -14,10 +14,10 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/ruby570bocadito/x404x/pkg/proto/gen/agent"
-	"github.com/ruby570bocadito/x404x/internal/crypto"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/internal/crypto"
+	agentv1 "github.com/ruby570bocadito/vesper/pkg/proto/gen/agent"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 )
 
 // gRPCConnector implements the Connector interface using gRPC + TLS.

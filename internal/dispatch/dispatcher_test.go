@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ruby570bocadito/x404x/internal/registry"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/registry"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 type mockState struct {
@@ -17,15 +17,20 @@ type mockState struct {
 	bridge BridgeCaller
 }
 
-func (m *mockState) GetAgents() []*types.Agent                             { return m.agents }
+func (m *mockState) GetAgents() []*types.Agent { return m.agents }
 func (m *mockState) GetAgent(id string) *types.Agent {
-	for _, a := range m.agents { if a.ID == id { return a } }; return nil
+	for _, a := range m.agents {
+		if a.ID == id {
+			return a
+		}
+	}
+	return nil
 }
-func (m *mockState) AddHost(h *types.Target)                              { m.hosts = append(m.hosts, h) }
-func (m *mockState) AddVulnerability(v *types.Vulnerability)              { m.vulns = append(m.vulns, v) }
-func (m *mockState) AddCredential(c *types.Credential)                    { m.creds = append(m.creds, c) }
-func (m *mockState) AddLateralEdge(from, to, exploit string)             { m.edges = append(m.edges, from+"->"+to) }
-func (m *mockState) GetBridgeClient() BridgeCaller                        { return m.bridge }
+func (m *mockState) AddHost(h *types.Target)                 { m.hosts = append(m.hosts, h) }
+func (m *mockState) AddVulnerability(v *types.Vulnerability) { m.vulns = append(m.vulns, v) }
+func (m *mockState) AddCredential(c *types.Credential)       { m.creds = append(m.creds, c) }
+func (m *mockState) AddLateralEdge(from, to, exploit string) { m.edges = append(m.edges, from+"->"+to) }
+func (m *mockState) GetBridgeClient() BridgeCaller           { return m.bridge }
 
 type mockBridge struct{ connected bool }
 
@@ -56,8 +61,8 @@ func TestDispatchDecisionNoAgents(t *testing.T) {
 		Confidence: 0.9,
 	}
 	campaign := &types.Campaign{
-		ID:     "camp-1",
-		Phase:  types.PhaseRecon,
+		ID:          "camp-1",
+		Phase:       types.PhaseRecon,
 		TargetScope: "10.0.0.0/24",
 	}
 
@@ -69,9 +74,9 @@ func TestDispatchDecisionNoAgents(t *testing.T) {
 
 func TestNewWithOptions(t *testing.T) {
 	tests := []struct {
-		name         string
-		autoApprove  bool
-		minConf      float64
+		name        string
+		autoApprove bool
+		minConf     float64
 	}{
 		{"auto approve high conf", true, 0.9},
 		{"manual low conf", false, 0.1},
@@ -118,8 +123,8 @@ func TestDispatchDecisionSync(t *testing.T) {
 		Confidence: 0.85,
 	}
 	campaign := &types.Campaign{
-		ID:     "camp-sync-1",
-		Phase:  types.PhaseRecon,
+		ID:          "camp-sync-1",
+		Phase:       types.PhaseRecon,
 		TargetScope: "10.0.0.5",
 	}
 
@@ -134,12 +139,12 @@ func TestDispatchDecisionSync(t *testing.T) {
 
 type mockModule struct{}
 
-func (m *mockModule) Name() string                                              { return "test/recon_scan" }
-func (m *mockModule) Phase() types.KillChainPhase                              { return types.PhaseRecon }
-func (m *mockModule) Description() string                                      { return "mock" }
-func (m *mockModule) Require() []string                                         { return nil }
-func (m *mockModule) Provide() []string                                         { return []string{"hosts"} }
-func (m *mockModule) Risk() string                                              { return "low" }
+func (m *mockModule) Name() string                { return "test/recon_scan" }
+func (m *mockModule) Phase() types.KillChainPhase { return types.PhaseRecon }
+func (m *mockModule) Description() string         { return "mock" }
+func (m *mockModule) Require() []string           { return nil }
+func (m *mockModule) Provide() []string           { return []string{"hosts"} }
+func (m *mockModule) Risk() string                { return "low" }
 func (m *mockModule) Execute(ctx context.Context, target registry.Target) (registry.ModuleResult, error) {
 	return registry.ModuleResult{
 		Success: true,

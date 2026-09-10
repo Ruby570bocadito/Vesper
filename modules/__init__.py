@@ -1,4 +1,4 @@
-# X404X Platform — Modules __init__
+# Vesper Platform — Modules __init__
 # Python module ecosystem
 
 from modules.bridge.bridge import BridgeServer

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 type testModule struct {
@@ -16,12 +16,12 @@ type testModule struct {
 	provide []string
 }
 
-func (m *testModule) Name() string                 { return m.name }
-func (m *testModule) Phase() types.KillChainPhase  { return m.phase }
-func (m *testModule) Description() string          { return m.desc }
-func (m *testModule) Require() []string            { return m.require }
-func (m *testModule) Provide() []string            { return m.provide }
-func (m *testModule) Risk() string                 { return m.risk }
+func (m *testModule) Name() string                { return m.name }
+func (m *testModule) Phase() types.KillChainPhase { return m.phase }
+func (m *testModule) Description() string         { return m.desc }
+func (m *testModule) Require() []string           { return m.require }
+func (m *testModule) Provide() []string           { return m.provide }
+func (m *testModule) Risk() string                { return m.risk }
 func (m *testModule) Execute(ctx context.Context, target Target) (ModuleResult, error) {
 	return ModuleResult{Success: true, Output: "ok"}, nil
 }
@@ -31,8 +31,8 @@ func TestRegisterAndGet(t *testing.T) {
 	defer func() { GlobalRegistry = map[string]ModuleFactory{} }()
 
 	Register(ModuleFactory{
-		Name:  "test/scanner",
-		Phase: types.PhaseRecon,
+		Name:    "test/scanner",
+		Phase:   types.PhaseRecon,
 		Factory: func() Module { return &testModule{name: "test/scanner"} },
 	})
 

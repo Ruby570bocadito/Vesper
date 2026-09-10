@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# X404X Interactive Installer v1.0
+# Vesper Interactive Installer v1.0
 # Semi-Autonomous Red Team Platform
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
@@ -29,7 +29,7 @@ g4="\033[38;5;135m"
 g5="\033[38;5;171m"
 g6="\033[38;5;207m"
 
-LOG="/tmp/x404x-install.log"
+LOG="/tmp/vesper-install.log"
 : > "$LOG"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -150,9 +150,9 @@ check_prereqs() {
 # ── Detect existing installation ──────────────────────────────────────────────
 detect_existing() {
   local found=0
-  if [ -f "./x404x" ] || [ -f "./dist/x404x" ]; then found=1; fi
-  if [ -f "./x404x.db" ]; then found=1; fi
-  if systemctl is-enabled x404x &>/dev/null 2>&1; then found=1; fi
+  if [ -f "./vesper" ] || [ -f "./dist/vesper" ]; then found=1; fi
+  if [ -f "./vesper.db" ]; then found=1; fi
+  if systemctl is-enabled vesper &>/dev/null 2>&1; then found=1; fi
   echo "$found"
 }
 
@@ -227,12 +227,12 @@ ensure_node() {
 
 # ── Build native ──────────────────────────────────────────────────────────────
 build_native() {
-  title "Building X404X (Native)"
+  title "Building Vesper (Native)"
 
   # Go backend
   info "Building Go binary..."
-  go build -o dist/x404x ./cmd/x404x/ 2>&1 | tee -a "$LOG"
-  ok "Backend built → dist/x404x"
+  go build -o dist/vesper ./cmd/vesper/ 2>&1 | tee -a "$LOG"
+  ok "Backend built → dist/vesper"
 
   # Frontend
   if [ -d "web" ]; then
@@ -359,14 +359,14 @@ install_plugins_fn() {
 # ── Systemd service ───────────────────────────────────────────────────────────
 setup_service() {
   title "Autostart Service"
-  if ! ask_yn "Configure X404X to start automatically on boot?"; then
+  if ! ask_yn "Configure Vesper to start automatically on boot?"; then
     return
   fi
 
   local bin_path
-  bin_path="$(cd "$(dirname "$0")" && pwd)/dist/x404x"
+  bin_path="$(cd "$(dirname "$0")" && pwd)/dist/vesper"
   if [ ! -f "$bin_path" ]; then
-    bin_path="$(cd "$(dirname "$0")" && pwd)/x404x"
+    bin_path="$(cd "$(dirname "$0")" && pwd)/vesper"
   fi
   if [ ! -f "$bin_path" ]; then
     warn "Binary not found, skipping service setup"
@@ -375,11 +375,11 @@ setup_service() {
 
   case "$OS" in
     linux|wsl)
-      local svc="/etc/systemd/system/x404x.service"
+      local svc="/etc/systemd/system/vesper.service"
       info "Creating systemd unit: $svc"
       sudo tee "$svc" >/dev/null <<UNIT
 [Unit]
-Description=X404X Red Team Platform
+Description=Vesper Red Team Platform
 After=network.target
 
 [Service]
@@ -396,15 +396,15 @@ LimitNOFILE=65536
 WantedBy=multi-user.target
 UNIT
       sudo systemctl daemon-reload 2>&1 | tee -a "$LOG"
-      sudo systemctl enable x404x 2>&1 | tee -a "$LOG"
+      sudo systemctl enable vesper 2>&1 | tee -a "$LOG"
       if ask_yn "Start service now?"; then
-        sudo systemctl start x404x 2>&1 | tee -a "$LOG"
+        sudo systemctl start vesper 2>&1 | tee -a "$LOG"
       fi
-      ok "Systemd service configured (x404x)"
+      ok "Systemd service configured (vesper)"
       SERVICE_TYPE="systemd"
       ;;
     macos)
-      local plist="$HOME/Library/LaunchAgents/com.x404x.plist"
+      local plist="$HOME/Library/LaunchAgents/com.vesper.plist"
       info "Creating launchd plist: $plist"
       mkdir -p "$HOME/Library/LaunchAgents"
       cat > "$plist" <<PLIST
@@ -413,7 +413,7 @@ UNIT
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.x404x</string>
+    <string>com.vesper</string>
     <key>ProgramArguments</key>
     <array>
         <string>${bin_path}</string>
@@ -426,14 +426,14 @@ UNIT
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/tmp/x404x-stdout.log</string>
+    <string>/tmp/vesper-stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/x404x-stderr.log</string>
+    <string>/tmp/vesper-stderr.log</string>
 </dict>
 </plist>
 PLIST
       launchctl load "$plist" 2>&1 | tee -a "$LOG"
-      ok "LaunchAgent configured (com.x404x)"
+      ok "LaunchAgent configured (com.vesper)"
       SERVICE_TYPE="launchd"
       ;;
   esac
@@ -442,13 +442,13 @@ PLIST
 # ── PATH setup ─────────────────────────────────────────────────────────────────
 setup_path() {
   title "Global Access (PATH)"
-  if ! ask_yn "Add x404x to PATH so you can run it from anywhere?"; then
+  if ! ask_yn "Add vesper to PATH so you can run it from anywhere?"; then
     return
   fi
 
-  local bin_path="$(pwd)/x404x"
+  local bin_path="$(pwd)/vesper"
   if [ ! -f "$bin_path" ]; then
-    bin_path="$(pwd)/dist/x404x"
+    bin_path="$(pwd)/dist/vesper"
   fi
   if [ ! -f "$bin_path" ]; then
     warn "Binary not found, skipping PATH setup"
@@ -457,8 +457,8 @@ setup_path() {
 
   # Try symlink to /usr/local/bin first
   if [ -d "/usr/local/bin" ] && [ -w "/usr/local/bin" ] 2>/dev/null; then
-    ln -sf "$bin_path" /usr/local/bin/x404x
-    ok "Symlink created: /usr/local/bin/x404x"
+    ln -sf "$bin_path" /usr/local/bin/vesper
+    ok "Symlink created: /usr/local/bin/vesper"
     return
   fi
 
@@ -474,9 +474,9 @@ setup_path() {
 
   if [ -n "$rc_file" ]; then
     local dir="$(dirname "$bin_path")"
-    if ! grep -q "x404x" "$rc_file" 2>/dev/null; then
+    if ! grep -q "vesper" "$rc_file" 2>/dev/null; then
       echo "" >> "$rc_file"
-      echo "# X404X" >> "$rc_file"
+      echo "# Vesper" >> "$rc_file"
       echo "export PATH=\"\$PATH:$dir\"" >> "$rc_file"
       ok "Added to PATH in ${rc_file}"
       info "Run: source ${rc_file}  to apply"
@@ -505,16 +505,16 @@ print_summary() {
   echo
   div
   echo -e "  ${cMtd}Quick commands:${R}"
-  echo -e "    ${cPri}x404x${R}                      ${cMtd}Launch interactive console${R}"
-  echo -e "    ${cPri}x404x --console${R}             ${cMtd}Launch console (alternative)${R}"
-  echo -e "    ${cPri}x404x --dashboard${R}           ${cMtd}Start API + WebSocket server${R}"
-  echo -e "    ${cPri}x404x tui${R}                   ${cMtd}Launch BubbleTea TUI${R}"
-  echo -e "    ${cPri}x404x campaign start${R}        ${cMtd}Start a campaign${R}"
-  echo -e "    ${cPri}x404x agent --help${R}          ${cMtd}Agent deployment help${R}"
-  echo -e "    ${cPri}x404x --help${R}                ${cMtd}Full CLI reference${R}"
+  echo -e "    ${cPri}vesper${R}                      ${cMtd}Launch interactive console${R}"
+  echo -e "    ${cPri}vesper --console${R}             ${cMtd}Launch console (alternative)${R}"
+  echo -e "    ${cPri}vesper --dashboard${R}           ${cMtd}Start API + WebSocket server${R}"
+  echo -e "    ${cPri}vesper tui${R}                   ${cMtd}Launch BubbleTea TUI${R}"
+  echo -e "    ${cPri}vesper campaign start${R}        ${cMtd}Start a campaign${R}"
+  echo -e "    ${cPri}vesper agent --help${R}          ${cMtd}Agent deployment help${R}"
+  echo -e "    ${cPri}vesper --help${R}                ${cMtd}Full CLI reference${R}"
   if [ "${SERVICE_TYPE:-}" = "systemd" ]; then
-    echo -e "    ${cPri}sudo systemctl status x404x${R}  ${cMtd}Service status${R}"
-    echo -e "    ${cPri}sudo journalctl -u x404x -f${R}  ${cMtd}Live service logs${R}"
+    echo -e "    ${cPri}sudo systemctl status vesper${R}  ${cMtd}Service status${R}"
+    echo -e "    ${cPri}sudo journalctl -u vesper -f${R}  ${cMtd}Live service logs${R}"
   fi
   echo
   div
@@ -536,7 +536,7 @@ main() {
   print_banner
 
   # ── Disclaimer ────────────────────────────────────────────────────────────
-  echo -e "  ${cMtd}${I}X404X is a security assessment tool. Use only on systems${R}"
+  echo -e "  ${cMtd}${I}Vesper is a security assessment tool. Use only on systems${R}"
   echo -e "  ${cMtd}${I}you own or have explicit permission to test.${R}"
   echo -e "  ${cMtd}${I}Unauthorized use is illegal.${R}"
   echo
@@ -552,7 +552,7 @@ main() {
   # ── Detect existing installation ──────────────────────────────────────────
   if [ "$(detect_existing)" = "1" ]; then
     title "Existing Installation Detected"
-    echo -e "  ${cWrn}X404X appears to be already installed.${R}"
+    echo -e "  ${cWrn}Vesper appears to be already installed.${R}"
     local upd_mode
     upd_mode=$(ask_choice "What would you like to do?" "1" \
       "Upgrade existing installation" \
@@ -624,7 +624,7 @@ main() {
     docker) install_docker_mode ;;
   esac
 
-  # ── PATH setup (x404x from anywhere) ──────────────────────────────────────────
+  # ── PATH setup (vesper from anywhere) ──────────────────────────────────────────
   setup_path
 
   # ── Autostart service ────────────────────────────────────────────────────────

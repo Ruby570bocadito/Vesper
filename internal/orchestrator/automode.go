@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // AutoMode manages autonomous decision execution.
@@ -301,4 +301,3 @@ func (am *AutoMode) RecentActions() []string {
 	copy(log, am.executedLog)
 	return log
 }
-

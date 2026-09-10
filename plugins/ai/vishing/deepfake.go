@@ -14,20 +14,20 @@ import (
 )
 
 type DeepfakeVishing struct {
-	config        interface{}
-	voiceModel    string
-	targetPhone   string
-	script        string
-	callerID      string
-	recordPath    string
+	config      interface{}
+	voiceModel  string
+	targetPhone string
+	script      string
+	callerID    string
+	recordPath  string
 }
 
 type VoiceClone struct {
-	SourceAudio  []byte
-	TargetText   string
-	ModelName    string
-	ClonedVoice  []byte
-	Duration     float64
+	SourceAudio []byte
+	TargetText  string
+	ModelName   string
+	ClonedVoice []byte
+	Duration    float64
 }
 
 func NewDeepfakeVishing(cfg interface{}) *DeepfakeVishing {
@@ -68,11 +68,11 @@ func (d *DeepfakeVishing) CloneVoice(sourceAudio []byte, targetText string) (*Vo
 		ModelName:   "coqui-tts-en-v3",
 	}
 
-	audioFile := filepath.Join(os.TempDir(), fmt.Sprintf("x404x_source_%d.wav", os.Getpid()))
+	audioFile := filepath.Join(os.TempDir(), fmt.Sprintf("vesper_source_%d.wav", os.Getpid()))
 	os.WriteFile(audioFile, sourceAudio, 0644)
 	defer os.Remove(audioFile)
 
-	outputFile := filepath.Join(os.TempDir(), fmt.Sprintf("x404x_cloned_%d.wav", os.Getpid()))
+	outputFile := filepath.Join(os.TempDir(), fmt.Sprintf("vesper_cloned_%d.wav", os.Getpid()))
 
 	cmd := exec.Command("tts",
 		"--text", targetText,
@@ -175,9 +175,9 @@ try:
     print("Twilio available for SIP trunking")
 except ImportError:
     print("Twilio not installed")
-`, )
+`)
 
-	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("x404x_voip_%d.py", os.Getpid()))
+	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("vesper_voip_%d.py", os.Getpid()))
 	os.WriteFile(tmpScript, []byte(voipScript), 0644)
 	defer os.Remove(tmpScript)
 
@@ -206,7 +206,7 @@ except Exception as e:
     print(f"SMS not sent: {e}")
 `, message, targetNumber)
 
-	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("x404x_sms_%d.py", os.Getpid()))
+	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("vesper_sms_%d.py", os.Getpid()))
 	os.WriteFile(tmpScript, []byte(psScript), 0644)
 	defer os.Remove(tmpScript)
 
@@ -216,13 +216,13 @@ except Exception as e:
 
 func (d *DeepfakeVishing) BuildSocialEngineeringProfile(targetEmail string) map[string]interface{} {
 	profile := map[string]interface{}{
-		"target_email":      targetEmail,
-		"corporate_title":   "Senior VP of Engineering",
-		"recent_projects":   []string{"Project Aurora", "Cloud Migration Q2"},
+		"target_email":         targetEmail,
+		"corporate_title":      "Senior VP of Engineering",
+		"recent_projects":      []string{"Project Aurora", "Cloud Migration Q2"},
 		"linkedin_connections": 500,
-		"twitter_handle":    "@" + strings.Split(targetEmail, "@")[0],
-		"voicemail_greeting": true,
-		"preferred_contact": "phone",
+		"twitter_handle":       "@" + strings.Split(targetEmail, "@")[0],
+		"voicemail_greeting":   true,
+		"preferred_contact":    "phone",
 	}
 
 	return profile

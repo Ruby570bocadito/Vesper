@@ -28,11 +28,11 @@ func NewSPIFFEIdentity(trustDomain string) (*SPIFFEIdentity, error) {
 		return nil, fmt.Errorf("spiffe key gen: %w", err)
 	}
 
-	spiffeURI, _ := url.Parse(fmt.Sprintf("spiffe://%s/agent/x404x", trustDomain))
+	spiffeURI, _ := url.Parse(fmt.Sprintf("spiffe://%s/agent/vesper", trustDomain))
 
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano()),
-		Subject:      pkix.Name{CommonName: fmt.Sprintf("spiffe://%s/agent/x404x", trustDomain)},
+		Subject:      pkix.Name{CommonName: fmt.Sprintf("spiffe://%s/agent/vesper", trustDomain)},
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(1 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,

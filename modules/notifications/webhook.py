@@ -1,4 +1,4 @@
-"""X404X Notification Webhook Module
+"""Vesper Notification Webhook Module
 Sends campaign events to Slack, Discord, and Telegram via webhooks.
 """
 import json
@@ -22,7 +22,7 @@ def send_notification(event_type: str, event_data: dict, config: dict) -> dict:
 
     message = _format_message(event_type, event_data)
 
-    slack_webhook = ncfg.get("slack_webhook", "") or os.environ.get("X404X_SLACK_WEBHOOK", "")
+    slack_webhook = ncfg.get("slack_webhook", "") or os.environ.get("VESPER_SLACK_WEBHOOK", "")
     if slack_webhook:
         slack_payload = json.dumps({"text": message}).encode()
         try:
@@ -33,16 +33,16 @@ def send_notification(event_type: str, event_data: dict, config: dict) -> dict:
         except urllib.error.URLError as e:
             results["errors"].append({"channel": "slack", "error": str(e)})
 
-    discord_webhook = ncfg.get("discord_webhook", "") or os.environ.get("X404X_DISCORD_WEBHOOK", "")
+    discord_webhook = ncfg.get("discord_webhook", "") or os.environ.get("VESPER_DISCORD_WEBHOOK", "")
     if discord_webhook:
         discord_payload = json.dumps({
             "content": "",
             "embeds": [{
-                "title": f"X404X - {event_type}",
+                "title": f"Vesper - {event_type}",
                 "description": message,
                 "color": 0xFF0000,
                 "timestamp": datetime.utcnow().isoformat(),
-                "footer": {"text": "X404X Framework"},
+                "footer": {"text": "Vesper Framework"},
             }],
         }).encode()
         try:
@@ -53,8 +53,8 @@ def send_notification(event_type: str, event_data: dict, config: dict) -> dict:
         except urllib.error.URLError as e:
             results["errors"].append({"channel": "discord", "error": str(e)})
 
-    telegram_token = ncfg.get("telegram_bot_token", "") or os.environ.get("X404X_TELEGRAM_TOKEN", "")
-    telegram_chat_id = ncfg.get("telegram_chat_id", "") or os.environ.get("X404X_TELEGRAM_CHAT_ID", "")
+    telegram_token = ncfg.get("telegram_bot_token", "") or os.environ.get("VESPER_TELEGRAM_TOKEN", "")
+    telegram_chat_id = ncfg.get("telegram_chat_id", "") or os.environ.get("VESPER_TELEGRAM_CHAT_ID", "")
     if telegram_token and telegram_chat_id:
         telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
         telegram_payload = urllib.parse.urlencode({
@@ -82,7 +82,7 @@ def _format_message(event_type: str, data: dict) -> str:
     }
     emoji = emoji_map.get(event_type, "📢")
 
-    lines = [f"{emoji} X404X Event: {event_type}"]
+    lines = [f"{emoji} Vesper Event: {event_type}"]
     lines.append(f"Timestamp: {datetime.now().isoformat()}")
     lines.append(f"Host: {os.uname().nodename}")
 

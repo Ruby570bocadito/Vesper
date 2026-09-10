@@ -2,7 +2,7 @@ package registry
 
 import (
 	"context"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 type ModuleFactory struct {
@@ -49,18 +49,31 @@ func GetModule(name string) (ModuleFactory, bool) { m, ok := GlobalRegistry[name
 
 func GetModulesForPhase(phase types.KillChainPhase) []ModuleFactory {
 	var mods []ModuleFactory
-	for _, m := range GlobalRegistry { if m.Phase == phase { mods = append(mods, m) } }
+	for _, m := range GlobalRegistry {
+		if m.Phase == phase {
+			mods = append(mods, m)
+		}
+	}
 	return mods
 }
 
 func GetModulesByRequirements(available []string) []ModuleFactory {
 	var mods []ModuleFactory
 	set := make(map[string]bool)
-	for _, a := range available { set[a] = true }
+	for _, a := range available {
+		set[a] = true
+	}
 	for _, m := range GlobalRegistry {
 		satisfied := true
-		for _, req := range m.Require { if !set[req] { satisfied = false; break } }
-		if satisfied { mods = append(mods, m) }
+		for _, req := range m.Require {
+			if !set[req] {
+				satisfied = false
+				break
+			}
+		}
+		if satisfied {
+			mods = append(mods, m)
+		}
 	}
 	return mods
 }

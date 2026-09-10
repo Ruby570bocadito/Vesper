@@ -1,5 +1,5 @@
 // Package logger provides structured, leveled logging shared across all
-// X404X components. Uses uber-go/zap under the hood.
+// Vesper components. Uses uber-go/zap under the hood.
 package logger
 
 import (
@@ -19,11 +19,11 @@ type Logger struct {
 
 // Config for logger initialization.
 type Config struct {
-	Level      string // debug, info, warn, error
-	Format     string // text, json
-	Output     string // stdout, file
-	File       string // file path if output=file
-	Component  string // component name for field tagging
+	Level     string // debug, info, warn, error
+	Format    string // text, json
+	Output    string // stdout, file
+	File      string // file path if output=file
+	Component string // component name for field tagging
 }
 
 // New creates a new Logger with the given configuration.

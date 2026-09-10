@@ -25,12 +25,12 @@ type AIOrchestrator struct {
 }
 
 type StateTransition struct {
-	From     string  `json:"from"`
-	To       string  `json:"to"`
-	Action   string  `json:"action"`
-	Reward   float64 `json:"reward"`
-	Delta    float64 `json:"delta"`
-	AgentID  string  `json:"agent_id"`
+	From      string  `json:"from"`
+	To        string  `json:"to"`
+	Action    string  `json:"action"`
+	Reward    float64 `json:"reward"`
+	Delta     float64 `json:"delta"`
+	AgentID   string  `json:"agent_id"`
 	Timestamp int64   `json:"timestamp"`
 }
 
@@ -43,16 +43,16 @@ type Prediction struct {
 }
 
 type RewardModel struct {
-	TotalReward    float64
-	EpisodeCount   int
-	LastReward     float64
-	LearningRate   float64
+	TotalReward     float64
+	EpisodeCount    int
+	LastReward      float64
+	LearningRate    float64
 	ExplorationRate float64
-	QTable         map[string]map[string]float64
+	QTable          map[string]map[string]float64
 }
 
 const (
-	defaultLearningRate   = 0.01
+	defaultLearningRate    = 0.01
 	defaultExplorationRate = 0.15
 	minExplorationRate     = 0.02
 	discountFactor         = 0.95
@@ -63,9 +63,9 @@ func NewAIOrchestrator() *AIOrchestrator {
 		confidence:   0.0,
 		lastDecision: time.Now(),
 		rewardModel: &RewardModel{
-			LearningRate:   defaultLearningRate,
+			LearningRate:    defaultLearningRate,
 			ExplorationRate: defaultExplorationRate,
-			QTable:         make(map[string]map[string]float64),
+			QTable:          make(map[string]map[string]float64),
 		},
 	}
 }
@@ -179,14 +179,14 @@ func (a *AIOrchestrator) getAvailableActions(state string) []string {
 	}
 
 	stateActions := map[string][]string{
-		"idle":       {"recon", "rest"},
-		"recon":      {"exploit", "lateral", "rest"},
-		"exploiting": {"privesc", "persist", "exfil"},
-		"privesc":    {"persist", "lateral", "exfil"},
-		"persisting": {"lateral", "exfil", "evade"},
-		"lateral":    {"exploit", "privesc", "recon"},
+		"idle":         {"recon", "rest"},
+		"recon":        {"exploit", "lateral", "rest"},
+		"exploiting":   {"privesc", "persist", "exfil"},
+		"privesc":      {"persist", "lateral", "exfil"},
+		"persisting":   {"lateral", "exfil", "evade"},
+		"lateral":      {"exploit", "privesc", "recon"},
 		"exfiltrating": {"rest", "evade", "persist"},
-		"evading":    {"persist", "lateral", "rest"},
+		"evading":      {"persist", "lateral", "rest"},
 	}
 
 	if actions, ok := stateActions[state]; ok {
@@ -319,10 +319,10 @@ func (a *AIOrchestrator) SimulateEpisode(steps int) []StateTransition {
 		reward := 0.1 + rand.Float64()*0.9
 
 		transition := StateTransition{
-			From:  state,
-			To:    nextState,
-			Action: action,
-			Reward: reward,
+			From:      state,
+			To:        nextState,
+			Action:    action,
+			Reward:    reward,
 			Timestamp: time.Now().Unix(),
 		}
 		episode = append(episode, transition)

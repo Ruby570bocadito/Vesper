@@ -1,4 +1,4 @@
-name: X404X CI/CD
+name: Vesper CI/CD
 
 on:
   push:
@@ -8,147 +8,113 @@ on:
   workflow_dispatch:
 
 jobs:
-  go-core:
+  build:
+    name: Build binaries (CLI + implant)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: 'stable'
           check-latest: true
-      - name: Go Core Tests
+      - name: go mod verify
+        run: go mod verify
+      - name: Build everything (this is what catches breakage)
+        run: go build ./...
+      - name: Build CLI
+        run: go build -o dist/vesper ./cmd/vesper
+      - name: Build implant beacon
+        run: go build -o dist/implant ./cmd/implant
+      - name: Smoke test CLI
         run: |
-          go test -v -count=1 -timeout 120s -race -coverprofile=core.out \
-            ./internal/appstate/... ./internal/dispatch/... ./internal/crypto/... \
-            ./internal/agent/... ./internal/orchestrator/... ./internal/registry/... \
-            ./internal/defense/... 2>&1
-      - name: Upload core coverage
-        uses: actions/upload-artifact@v4
+          ./dist/vesper help
+          ./dist/vesper version
+      - uses: actions/upload-artifact@v4
         with:
-          name: coverage-core
-          path: core.out
+          name: vesper-binaries
+          path: dist/
 
-  go-ransomware:
+  test:
+    name: Go tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: 'stable'
           check-latest: true
-      - name: Go Ransomware Tests
-        run: |
-          go test -v -count=1 -timeout 180s -coverprofile=ransomware.out \
-            ./internal/ransomware/... 2>&1
-      - name: Upload ransomware coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-ransomware
-          path: ransomware.out
+      - name: Run all tests
+        run: go test ./... -cover -timeout 180s
 
-  go-lint:
+  lint:
+    name: go vet + gofmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
+          go-version: 'stable'
+          check-latest: true
+      - name: go vet
+        run: go vet ./...
+      - name: gofmt check
+        run: |
+          unformatted=$(gofmt -l cmd internal pkg plugins)
+          if [ -n "$unformatted" ]; then
+            echo "unformatted files:"
+            echo "$unformatted"
+            exit 1
+          fi
 
-  python-bridge:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.11', '3.12', '3.13']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-timeout pytest-cov
-      - name: Bridge Smoke Tests
-        run: |
-          python modules/bridge/tests/test_all_handlers.py
-      - name: Bridge Unittest + Coverage
-        run: |
-          python -m pytest modules/bridge/tests/test_handlers.py \
-            --cov=modules.bridge.handlers --cov-report=xml:python-coverage.xml \
-            --cov-report=term -v 2>&1
-      - name: Upload Python coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-python-py${{ matrix.python-version }}
-          path: python-coverage.xml
-
-  plugins-worm:
+  bridge:
+    name: Python bridge tests (sandboxed)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Worm Unit Tests
+      - name: Install pytest
+        run: pip install pytest
+      - name: Safety sandbox tests
+        run: cd modules/bridge && python3 -m pytest tests/ -v --tb=short
+      - name: Repo must stay clean after tests
         run: |
-          pip install pytest
-          python -m pytest plugins/worm/tests/test_unit.py -v --timeout=30 || true
+          if [ -n "$(git status --porcelain modules/ pkg/)" ]; then
+            echo "::error::bridge tests mutated tracked files:"
+            git status --porcelain modules/ pkg/
+            exit 1
+          fi
 
-  plugins-specter:
+  dashboard:
+    name: Vue dashboard build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
-      - name: SPECTER Unit Tests
-        run: |
-          pip install pytest pytest-asyncio
-          python -m pytest \
-            plugins/ai/specter/tests/test_core.py \
-            plugins/ai/specter/tests/test_permissions.py \
-            plugins/ai/specter/tests/test_session.py \
-            -v --timeout=30 || true
+          node-version: '22'
+      - name: Install + build
+        run: cd web && npm ci && npm run build
 
-  integration:
+  config:
+    name: Config + proto consistency
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
-      - uses: actions/setup-python@v5
+          go-version: 'stable'
+      - name: Validate config.yaml parses
+        run: python3 -c "import yaml,sys; yaml.safe_load(open('config.yaml')); print('config.yaml OK')"
+      - name: Proto files parse (protoc dry parse)
+        uses: arduino/setup-protoc@v3
         with:
-          python-version: '3.11'
-      - name: Integration Tests
+          version: '27.3'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: protoc parse check
         run: |
-          bash test/integration/run_integration.sh
-
-  coverage:
-    runs-on: ubuntu-latest
-    needs: [go-core, go-ransomware, python-bridge]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - name: Download all coverage artifacts
-        uses: actions/download-artifact@v4
-      - name: Generate Go coverage
-        run: |
-          go test -coverprofile=coverage.out -covermode=atomic ./internal/... 2>&1 || true
-          echo "=== Go Coverage Summary ==="
-          go tool cover -func=coverage.out | tail -30
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.out
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+          for p in pkg/proto/*.proto; do
+            protoc --proto_path=pkg/proto --descriptor_set_out=/dev/null "$p"
+          done
+          echo "protos OK"

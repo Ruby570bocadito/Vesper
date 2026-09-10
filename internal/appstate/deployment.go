@@ -8,24 +8,24 @@ import (
 )
 
 type DeploymentManager struct {
-	state         *AppState
-	victims       map[string]*VictimProfile
-	mu            sync.RWMutex
+	state   *AppState
+	victims map[string]*VictimProfile
+	mu      sync.RWMutex
 }
 
 type VictimProfile struct {
-	ID             string              `json:"id"`
-	Hostname       string              `json:"hostname"`
-	OS             string              `json:"os"`
-	IP             string              `json:"ip"`
-	Ports          []int               `json:"ports"`
-	Services       []string            `json:"services"`
-	ActiveModules  []string            `json:"active_modules"`
-	ModuleHistory  []ModuleDeployEvent `json:"module_history"`
-	FirstSeen      time.Time           `json:"first_seen"`
-	LastSeen       time.Time           `json:"last_seen"`
-	RiskScore      float64             `json:"risk_score"`
-	Status         string              `json:"status"`
+	ID            string              `json:"id"`
+	Hostname      string              `json:"hostname"`
+	OS            string              `json:"os"`
+	IP            string              `json:"ip"`
+	Ports         []int               `json:"ports"`
+	Services      []string            `json:"services"`
+	ActiveModules []string            `json:"active_modules"`
+	ModuleHistory []ModuleDeployEvent `json:"module_history"`
+	FirstSeen     time.Time           `json:"first_seen"`
+	LastSeen      time.Time           `json:"last_seen"`
+	RiskScore     float64             `json:"risk_score"`
+	Status        string              `json:"status"`
 }
 
 type ModuleDeployEvent struct {

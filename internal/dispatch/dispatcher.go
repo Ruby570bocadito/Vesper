@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ruby570bocadito/x404x/internal/registry"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/registry"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // Dispatcher routes decisions to appropriate modules and agents.

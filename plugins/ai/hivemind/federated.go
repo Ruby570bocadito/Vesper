@@ -8,20 +8,19 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"sort"
 	"sync"
 	"time"
 )
 
 type FederatedModel struct {
-	Weights       map[string][]float64
-	GlobalGrads   map[string][]float64
-	AgentUpdates  map[string]*AgentUpdate
-	Round         int
-	TotalAgents   int
-	LearningRate  float64
-	MinAgents     int
-	mu            sync.RWMutex
+	Weights      map[string][]float64
+	GlobalGrads  map[string][]float64
+	AgentUpdates map[string]*AgentUpdate
+	Round        int
+	TotalAgents  int
+	LearningRate float64
+	MinAgents    int
+	mu           sync.RWMutex
 }
 
 type AgentUpdate struct {
@@ -33,22 +32,22 @@ type AgentUpdate struct {
 }
 
 type VictimProfile struct {
-	UserID         string
-	LoginTimes     []float64
-	TypingSpeed    float64
-	AppUsage       map[string]float64
-	Vulnerability  float64
-	PhishTime      []float64
-	ProfileHash    string
-	LastUpdated    int64
+	UserID        string
+	LoginTimes    []float64
+	TypingSpeed   float64
+	AppUsage      map[string]float64
+	Vulnerability float64
+	PhishTime     []float64
+	ProfileHash   string
+	LastUpdated   int64
 }
 
 type FedAvgResult struct {
-	GlobalLoss   float64
-	AgentLosses  map[string]float64
-	Converged    bool
-	Round        int
-	Duration     time.Duration
+	GlobalLoss  float64
+	AgentLosses map[string]float64
+	Converged   bool
+	Round       int
+	Duration    time.Duration
 }
 
 func NewFederatedModel(learningRate float64, minAgents int) *FederatedModel {
@@ -211,9 +210,9 @@ func (fm *FederatedModel) PredictOptimalPhishTime(profile *VictimProfile) time.T
 
 func (fm *FederatedModel) AggregateProfiles(profiles []*VictimProfile) map[string]interface{} {
 	agg := map[string]interface{}{
-		"total_profiles": len(profiles),
+		"total_profiles":    len(profiles),
 		"avg_vulnerability": 0.0,
-		"most_common_hour": 0.0,
+		"most_common_hour":  0.0,
 	}
 
 	if len(profiles) == 0 {
@@ -250,10 +249,10 @@ func (fm *FederatedModel) ExportModel(path string) error {
 	defer fm.mu.RUnlock()
 
 	data, err := json.MarshalIndent(map[string]interface{}{
-		"weights":  fm.Weights,
-		"round":    fm.Round,
-		"grads":    fm.GlobalGrads,
-		"lr":       fm.LearningRate,
+		"weights": fm.Weights,
+		"round":   fm.Round,
+		"grads":   fm.GlobalGrads,
+		"lr":      fm.LearningRate,
 	}, "", "  ")
 	if err != nil {
 		return err
@@ -303,11 +302,11 @@ func (fm *FederatedModel) FullFedLearnSuite(numAgents int) map[string]interface{
 	}
 
 	profile := fm.ProfileVictim(map[string]interface{}{
-		"user_id":            "user-001",
-		"login_times":        []float64{8.5, 9.0, 9.5, 13.0, 14.0, 18.0},
-		"typing_speed":       52.5,
+		"user_id":             "user-001",
+		"login_times":         []float64{8.5, 9.0, 9.5, 13.0, 14.0, 18.0},
+		"typing_speed":        52.5,
 		"vulnerability_score": 0.7,
-		"phish_times":        []float64{9.5, 10.5, 14.0},
+		"phish_times":         []float64{9.5, 10.5, 14.0},
 	})
 
 	result["profile_hash"] = profile.ProfileHash[:8] + "..."
@@ -365,8 +364,3 @@ func randFloat() float64 {
 	bits := binary.LittleEndian.Uint64(b)
 	return float64(bits%1000) / 1000.0
 }
-
-var (
-	_ = sort.Float64Slice
-	_ = math.Max
-)

@@ -1,5 +1,5 @@
 #!/bin/bash
-# X404X — One-Click Deployment Script
+# Vesper — One-Click Deployment Script
 # ====================================
 # Levanta todo el stack: bridge Python, API Go, dashboard web, C2 server.
 # Uso: ./scripts/deploy.sh [--dev|--prod] [--port 8443]
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
         --c2) C2_ADDR="$2"; shift 2 ;;
         --target-os) TARGET_OS="$2"; shift 2 ;;
         --help|-h)
-            echo "X404X Deployment Script"
+            echo "Vesper Deployment Script"
             echo ""
             echo "Uso: ./scripts/deploy.sh [opciones]"
             echo ""
@@ -42,7 +42,7 @@ done
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════════╗"
-echo "  ║              X404X — DEPLOYMENT v3.2                    ║"
+echo "  ║              Vesper — DEPLOYMENT v3.2                    ║"
 echo "  ╚══════════════════════════════════════════════════════════╝"
 echo ""
 echo "  Modo:     $MODE"
@@ -75,7 +75,7 @@ if [ -n "$BUILD_PAYLOAD" ]; then
             echo "  [+] Payload: dist/agent-${TARGET_OS}-amd64" || \
             echo "  [!] Build falló. Usa 'make build-agent'"
     else
-        echo "  [i] Payload generation requires Go. Use: x404x payload generate"
+        echo "  [i] Payload generation requires Go. Use: vesper payload generate"
         echo "  [i] Target: ${TARGET_OS}/amd64 → C2: ${C2_ADDR}"
     fi
     echo ""
@@ -122,7 +122,7 @@ if [ "$MODE" = "dev" ]; then
     echo ""
 
     if command -v go >/dev/null 2>&1; then
-        go run ./cmd/x404x/ dashboard --port "$PORT" &
+        go run ./cmd/vesper/ dashboard --port "$PORT" &
         API_PID=$!
         echo "  [+] API iniciada (PID=$API_PID)"
     fi
@@ -135,7 +135,7 @@ else
             (cd web && npm install --silent && npm run build) 2>/dev/null || true
         fi
 
-        go run ./cmd/x404x/ dashboard &
+        go run ./cmd/vesper/ dashboard &
         API_PID=$!
         echo "  [+] Dashboard iniciado (PID=$API_PID)"
     else
@@ -156,10 +156,10 @@ echo "  Bridge:      localhost:$BRIDGE_PORT"
 echo "  ─────────────────────────────────────────────────────"
 echo ""
 echo "  Comandos útiles:"
-echo "    x404x campaign start --name demo --target 10.0.0.0/24"
-echo "    x404x payload generate --os windows --c2 10.0.0.1:$PORT"
-echo "    x404x ai suggest"
-echo "    x404x listeners list"
+echo "    vesper campaign start --name demo --target 10.0.0.0/24"
+echo "    vesper payload generate --os windows --c2 10.0.0.1:$PORT"
+echo "    vesper ai suggest"
+echo "    vesper listeners list"
 echo ""
 echo "  Detener: Ctrl+C"
 echo ""

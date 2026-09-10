@@ -1,8 +1,8 @@
-# Contributing to X404X (v3.2)
+# Contributing to Vesper (v3.2)
 
 ## Code of Conduct
 
-X404X is an academic project for cybersecurity education. All contributions must align with the ethical guidelines:
+Vesper is an academic project for cybersecurity education. All contributions must align with the ethical guidelines:
 
 1. Only use in authorized environments (labs, CTFs, penetration tests with written permission).
 2. Do not submit exploits against live targets.
@@ -11,17 +11,17 @@ X404X is an academic project for cybersecurity education. All contributions must
 ## Getting Started
 
 ```bash
-git clone https://github.com/Ruby570bocadito/X404X.git
-cd X404X
-go build -o x404x ./cmd/x404x/
+git clone https://github.com/Ruby570bocadito/Vesper.git
+cd Vesper
+go build -o vesper ./cmd/vesper/
 pip install -r requirements.txt
 ```
 
 ## Project Structure (Monorepo)
 
 ```
-X404X/
-├── cmd/x404x/           # CLI entry point (Cobra + TUI + Console)
+Vesper/
+├── cmd/vesper/           # CLI entry point (Cobra + TUI + Console)
 ├── internal/            # Go core packages
 │   ├── agent/           # Unified Go implant + bridge client
 │   ├── api/             # REST API + WebSocket hub

@@ -1,4 +1,4 @@
-// Package orchestrator implements the central coordination engine for X404X.
+// Package orchestrator implements the central coordination engine for Vesper.
 //
 // The Orchestrator is the brain of the framework. It:
 //   - Manages campaigns and their kill chain progression
@@ -41,23 +41,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ruby570bocadito/x404x/internal/dispatch"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/dispatch"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 const maxDecisionsPerCampaign = 1000
 
 // Orchestrator is the central coordination engine.
 type Orchestrator struct {
-	cfg       *config.Config
-	log       *logger.Logger
+	cfg *config.Config
+	log *logger.Logger
 
-	campaigns  map[string]*types.Campaign
-	agents     map[string]*types.Agent
-	decisions  map[string][]*types.Decision
-	mutex      sync.RWMutex
+	campaigns map[string]*types.Campaign
+	agents    map[string]*types.Agent
+	decisions map[string][]*types.Decision
+	mutex     sync.RWMutex
 
 	eventBus    *EventBus
 	decisionEng *DecisionEngine
@@ -79,14 +79,14 @@ func New(cfg *config.Config) (*Orchestrator, error) {
 	}
 
 	o := &Orchestrator{
-		cfg:       cfg,
-		log:       log,
-		campaigns: make(map[string]*types.Campaign),
-		agents:    make(map[string]*types.Agent),
-		decisions: make(map[string][]*types.Decision),
-		eventBus:  NewEventBus(),
+		cfg:        cfg,
+		log:        log,
+		campaigns:  make(map[string]*types.Campaign),
+		agents:     make(map[string]*types.Agent),
+		decisions:  make(map[string][]*types.Decision),
+		eventBus:   NewEventBus(),
 		worldGraph: NewWorldGraph(),
-		stopCh:    make(chan struct{}),
+		stopCh:     make(chan struct{}),
 	}
 
 	o.decisionEng = NewDecisionEngine(cfg, log, o.worldGraph)
@@ -289,13 +289,13 @@ func (o *Orchestrator) GetMetrics(campaignID string) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"campaign_name":          c.Name,
-		"phase":                  c.Phase,
-		"progress":               c.Progress,
-		"agent_count":            c.AgentCount,
-		"pending_decisions":      len(o.decisions[campaignID]),
-		"world_graph_nodes":      o.worldGraph.NodeCount(),
-		"world_graph_edges":      o.worldGraph.EdgeCount(),
+		"campaign_name":     c.Name,
+		"phase":             c.Phase,
+		"progress":          c.Progress,
+		"agent_count":       c.AgentCount,
+		"pending_decisions": len(o.decisions[campaignID]),
+		"world_graph_nodes": o.worldGraph.NodeCount(),
+		"world_graph_edges": o.worldGraph.EdgeCount(),
 	}
 }
 

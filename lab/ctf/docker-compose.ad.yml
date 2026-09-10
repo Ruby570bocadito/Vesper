@@ -1,4 +1,4 @@
-# X404X — CTF Scenario: Active Directory Lab
+# Vesper — CTF Scenario: Active Directory Lab
 # ============================================
 # 6 containers simulating a corporate Active Directory environment.
 #
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ctf-target
-    container_name: x404x-ctf-dc
+    container_name: vesper-ctf-dc
     hostname: dc
     networks:
       ctf_net:
@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ctf-target
-    container_name: x404x-ctf-exchange
+    container_name: vesper-ctf-exchange
     hostname: exchange
     networks:
       ctf_net:
@@ -50,7 +50,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ctf-target
-    container_name: x404x-ctf-db
+    container_name: vesper-ctf-db
     hostname: db
     networks:
       ctf_net:
@@ -66,7 +66,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ctf-target
-    container_name: x404x-ctf-web
+    container_name: vesper-ctf-web
     hostname: web
     networks:
       ctf_net:
@@ -81,7 +81,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ctf-target
-    container_name: x404x-ctf-ws
+    container_name: vesper-ctf-ws
     hostname: ws
     networks:
       ctf_net:
@@ -90,7 +90,7 @@ services:
 
   ids:
     image: jasonish/suricata:latest
-    container_name: x404x-ctf-ids
+    container_name: vesper-ctf-ids
     hostname: ids
     networks:
       ctf_net:

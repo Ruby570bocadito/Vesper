@@ -140,7 +140,7 @@ func (am *AuthManager) extractToken(r *http.Request) string {
 		return strings.TrimPrefix(auth, "Bearer ")
 	}
 
-	cookie, err := r.Cookie("x404x_token")
+	cookie, err := r.Cookie("vesper_token")
 	if err == nil {
 		return cookie.Value
 	}
@@ -171,7 +171,7 @@ func (am *AuthManager) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	session := am.CreateSession(req.Username)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "x404x_token",
+		Name:     "vesper_token",
 		Value:    session.Token,
 		Path:     "/",
 		HttpOnly: true,
@@ -195,7 +195,7 @@ func (am *AuthManager) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "x404x_token",
+		Name:     "vesper_token",
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,

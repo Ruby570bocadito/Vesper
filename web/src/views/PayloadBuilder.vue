@@ -2,7 +2,7 @@
   <div class="glass-panel p-4 h-full flex flex-col gap-4 font-mono">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-gray-800 pb-3">
-      <h2 class="text-lg text-purple font-bold">X404X / PAYLOAD BUILDER</h2>
+      <h2 class="text-lg text-purple font-bold">Vesper / PAYLOAD BUILDER</h2>
       <span class="text-xs text-gray-500">MSFVenom / Golang Compiler Wrapper</span>
     </div>
 
@@ -112,7 +112,7 @@
         <div v-if="payloadReady" class="bg-panel border border-neon/30 p-3 rounded flex items-center justify-between animate-fade-in">
           <div>
             <div class="text-neon text-sm font-bold mb-1">Payload Compilation Successful</div>
-            <div class="text-gray-400 text-xs">x404x_implant_{{ config.os.toLowerCase() }}_{{ config.arch }}.{{ config.format }} ({{ payloadSize }})</div>
+            <div class="text-gray-400 text-xs">vesper_implant_{{ config.os.toLowerCase() }}_{{ config.arch }}.{{ config.format }} ({{ payloadSize }})</div>
           </div>
           <div class="flex gap-2">
             <button @click="copyBase64" class="btn text-xs bg-dark hover:bg-gray-800">Copy B64</button>
@@ -234,7 +234,7 @@ const copyBase64 = () => {
 const download = () => {
   const link = document.createElement('a')
   link.href = 'data:application/octet-stream;base64,' + b64Data.value
-  link.download = `x404x_implant_${config.value.os.toLowerCase()}_${config.value.arch}.${config.value.format}`
+  link.download = `vesper_implant_${config.value.os.toLowerCase()}_${config.value.arch}.${config.value.format}`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package x404x.v1;
+package vesper.v1;
 
-option go_package = "github.com/ruby570bocadito/x404x/core/proto/gen/agent;agentv1";
+option go_package = "github.com/ruby570bocadito/vesper/pkg/proto/gen/agent;agentv1";
 
 // AgentService is the bidirectional stream between implant and C2
 service AgentService {

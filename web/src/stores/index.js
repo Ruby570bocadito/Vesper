@@ -71,6 +71,11 @@ export const useCampaignStore = defineStore('campaigns', () => {
       const res = await fetch(`${API_BASE}/campaigns`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       campaigns.value = await res.json()
+      // auto-select the running campaign so the header reflects reality
+      if (!activeCampaign.value && campaigns.value.length) {
+        activeCampaign.value =
+          campaigns.value.find(c => c.status === 'running') || campaigns.value[0]
+      }
     } catch (e) {
       console.error('Failed to fetch campaigns:', e)
     } finally {

@@ -1,6 +1,6 @@
 openapi: "3.0.3"
 info:
-  title: X404X Autonomous Red Team Platform API
+  title: Vesper Autonomous Red Team Platform API
   version: "2.10"
   description: "Full REST + WebSocket API for agent management, module deployment, C2 operations, and dashboard"
 servers:

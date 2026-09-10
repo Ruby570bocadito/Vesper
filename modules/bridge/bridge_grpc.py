@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""X404X — Python gRPC Bridge Server (v3.2)
+"""Vesper — Python gRPC Bridge Server (v3.2)
 
 Replaces the raw TCP/JSON bridge with full gRPC using protobuf schemas.
 Implements BridgeService: ExecuteModule, AIAnalyze, ReconStream, HealthCheck.
@@ -40,7 +40,7 @@ import bridge_pb2
 import bridge_pb2_grpc
 
 logging.basicConfig(level=logging.INFO, format="[Bridge-gRPC] %(message)s")
-log = logging.getLogger("x404x.bridge")
+log = logging.getLogger("vesper.bridge")
 
 
 # ============================================================
@@ -375,7 +375,7 @@ class BridgeServiceServicer(bridge_pb2_grpc.BridgeServiceServicer):
         handlers = data.get("ransomware_handlers", 0)
         return bridge_pb2.HealthCheckResponse(
             ok=result.get("success", False),
-            module_name="x404x-bridge",
+            module_name="vesper-bridge",
             version=f"3.2-grpc ({inline} inline modules, {handlers} handlers)",
         )
 
@@ -402,7 +402,7 @@ def serve(host="127.0.0.1", port=9100, max_workers=20):
     server.add_insecure_port(endpoint)
 
     server.start()
-    log.info(f"X404X Bridge gRPC v3.2 listening on {endpoint}")
+    log.info(f"Vesper Bridge gRPC v3.2 listening on {endpoint}")
     log.info(f"Modules: {len(registry.list())} inline + {sum(len(v) for v in _handler_registry.values())} handlers")
 
     try:
@@ -414,7 +414,7 @@ def serve(host="127.0.0.1", port=9100, max_workers=20):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="X404X Python gRPC Bridge")
+    parser = argparse.ArgumentParser(description="Vesper Python gRPC Bridge")
     parser.add_argument("--host", default="127.0.0.1", help="Listen host")
     parser.add_argument("--port", type=int, default=9100, help="Listen port")
     parser.add_argument("--workers", type=int, default=20, help="Thread pool size")

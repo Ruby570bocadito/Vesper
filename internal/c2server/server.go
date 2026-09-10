@@ -13,26 +13,26 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/ruby570bocadito/x404x/internal/appstate"
-	agentv1 "github.com/ruby570bocadito/x404x/pkg/proto/gen/agent"
-	c2v1 "github.com/ruby570bocadito/x404x/pkg/proto/gen/c2"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/appstate"
+	agentv1 "github.com/ruby570bocadito/vesper/pkg/proto/gen/agent"
+	c2v1 "github.com/ruby570bocadito/vesper/pkg/proto/gen/c2"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // Server is the integrated C2 listener.
 // It runs a gRPC server that implements AgentService (for agent comms)
 // and C2Service (for management/monitoring).
 type Server struct {
-	cfg      *config.Config
-	log      *logger.Logger
-	state    *appstate.AppState
-	grpcSrv  *grpc.Server
-	agents   map[string]*AgentConnection
+	cfg          *config.Config
+	log          *logger.Logger
+	state        *appstate.AppState
+	grpcSrv      *grpc.Server
+	agents       map[string]*AgentConnection
 	agentStreams map[string]agentv1.AgentService_CommandStreamServer
-	mu       sync.RWMutex
-	running  bool
+	mu           sync.RWMutex
+	running      bool
 }
 
 // AgentConnection represents a connected agent.

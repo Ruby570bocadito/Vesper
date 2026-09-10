@@ -14,19 +14,19 @@ import (
 // BlueForgeEngine simulates EDR/AV detection of ATT&CK techniques used by the red team.
 // It tracks which techniques are detected vs undetected and computes coverage metrics.
 type BlueForgeEngine struct {
-	Techniques   []ATTACKTechnique
-	Detected     []string
-	Undetected   []string
-	CoveragePct  float64
-	Score        float64
+	Techniques  []ATTACKTechnique
+	Detected    []string
+	Undetected  []string
+	CoveragePct float64
+	Score       float64
 }
 
 // ATTACKTechnique represents a single MITRE ATT&CK technique with detection status.
 type ATTACKTechnique struct {
-	ID     string
-	Name   string
-	Tactic string
-	Used   bool
+	ID       string
+	Name     string
+	Tactic   string
+	Used     bool
 	Detected bool
 }
 
@@ -146,9 +146,9 @@ func (bf *BlueForgeEngine) DetectedEDRs() []string {
 // GenerateReport creates a formatted ATT&CK coverage report with detection metrics.
 func (bf *BlueForgeEngine) GenerateReport() string {
 	bf.SimulateDetection()
-	report := fmt.Sprintf("=== X404X ATT&CK COVERAGE REPORT ===\nTechniques Used: %d\nDetected: %d\nUndetected: %d\nCoverage: %.1f%%\n",
+	report := fmt.Sprintf("=== Vesper ATT&CK COVERAGE REPORT ===\nTechniques Used: %d\nDetected: %d\nUndetected: %d\nCoverage: %.1f%%\n",
 		len(bf.Undetected)+len(bf.Detected), len(bf.Detected), len(bf.Undetected), bf.CoveragePct)
-	reportPath := "/tmp/x404x_attack_report.json"
+	reportPath := "/tmp/vesper_attack_report.json"
 	data, _ := json.MarshalIndent(map[string]interface{}{
 		"score": bf.Score, "detected": bf.Detected, "undetected": bf.Undetected,
 	}, "", "  ")

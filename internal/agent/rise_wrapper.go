@@ -13,26 +13,26 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 )
 
 // RiseWrapper wraps the Rise-Privilege binary for programmatic use.
 type RiseWrapper struct {
-	log    *logger.Logger
+	log     *logger.Logger
 	binPath string
 }
 
 // RiseResult is the parsed JSON output from Rise-Privilege.
 type RiseResult struct {
-	Rooted   bool              `json:"rooted"`
-	Findings []RiseFinding     `json:"findings"`
-	Vectors  []RiseVector      `json:"vectors"`
+	Rooted   bool          `json:"rooted"`
+	Findings []RiseFinding `json:"findings"`
+	Vectors  []RiseVector  `json:"vectors"`
 }
 
 type RiseFinding struct {
-	Type     string `json:"type"`
-	Detail   string `json:"detail"`
-	Risk     string `json:"risk"`
+	Type   string `json:"type"`
+	Detail string `json:"detail"`
+	Risk   string `json:"risk"`
 }
 
 type RiseVector struct {
@@ -50,7 +50,7 @@ func NewRiseWrapper(log *logger.Logger) *RiseWrapper {
 	searchPaths := []string{
 		"core/privesc/Rise-Privilege",
 		"core/privesc/rise-privilege",
-		"/opt/x404x/plugins/privesc/Rise-Privilege",
+		"/opt/vesper/plugins/privesc/Rise-Privilege",
 		"Rise-Privilege",
 		"rise-privilege",
 	}

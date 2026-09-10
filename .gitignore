@@ -93,3 +93,5 @@ reports/*.json
 
 # === OpenCode ===
 .opencode/
+vesper.db
+lab_root/

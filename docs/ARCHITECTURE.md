@@ -1,8 +1,8 @@
-# X404X — Architecture Documentation (v3.2)
+# Vesper — Architecture Documentation (v3.2)
 
 ## System Overview
 
-X404X is a semi-autonomous Red Team platform covering the complete cyber kill chain:
+Vesper is a semi-autonomous Red Team platform covering the complete cyber kill chain:
 Reconnaissance → Weaponization → Delivery → Exploitation → Installation → C2 → Actions on Objective → Exfiltration.
 
 Built as a monorepo with Go backend, Python gRPC bridge, Vue 3 frontend, and 154+ modules across 45 categories.
@@ -76,8 +76,8 @@ All communication uses X25519 ECDH key exchange + XChaCha20-Poly1305 AEAD encryp
 ## Directory Structure (Monorepo)
 
 ```
-X404X/
-├── cmd/                    # Go binaries (x404x CLI, deployment)
+Vesper/
+├── cmd/                    # Go binaries (vesper CLI, deployment)
 ├── internal/               # Go core packages
 │   ├── agent/              # Implant agent + bridge client
 │   ├── api/                # REST API server + WebSocket hub
@@ -88,7 +88,6 @@ X404X/
 │   ├── defense/            # BlueForge ATT&CK coverage engine
 │   ├── dispatch/           # Module dispatcher (registry → handler)
 │   ├── orchestrator/       # Decision engine (Rules + AI)
-│   ├── ransomware/         # Core ransomware engine + 12 module packages
 │   └── registry/           # Dynamic module registry
 ├── pkg/
 │   ├── proto/              # Protobuf definitions (agent, bridge, c2, common)
@@ -96,7 +95,6 @@ X404X/
 │   └── shared/             # Shared types, database models
 ├── modules/
 │   └── bridge/             # Python gRPC bridge server
-│       ├── handlers/       # 107 ransomware handlers (12 files)
 │       └── tests/          # Python tests (21 unit + smoke)
 ├── plugins/                # Specialized modules
 │   ├── ai/                 # Specter + Apex AI engines
@@ -157,7 +155,6 @@ X404X/
 | Crypto / SPIFFE | Go | `internal/crypto/` | Shared |
 | Protobuf | .proto | `pkg/proto/` | Shared |
 | Python Bridge (gRPC) | Python | `modules/bridge/` | IPC |
-| Ransomware Handlers | Python | `modules/bridge/handlers/` | Actions |
 | Worm Propagation | Python | `plugins/worm/` | Lateral |
 | Specter AI | Python | `plugins/ai/specter/` | AI |
 | Apex Automation | Python | `plugins/ai/apex/` | AI |
@@ -243,21 +240,16 @@ X404X/
 ```
 Go Orchestrator
   │
-  ├─ dispatch.Call("ransomware", "encrypt", params)
   │
   ├─ Registry lookup: Go module → found? → execute Go
-  │   └─ NOT found? → BridgeClient.Call("ransomware", "encrypt", params)
   │
   └─ BridgeClient (internal/agent/bridge_client.go)
        │
        ├─ gRPC call: BridgeService.ExecuteModule(ModuleRequest)
-       │    module: "ransomware", function: "encrypt", params: {...}
        │
        └─ Python Bridge Server (modules/bridge/bridge.py)
             │
-            ├─ Registry.execute("ransomware", "encrypt", params)
             │
-            ├─ Handler lookup: handlers/ransomware.py → handle_encrypt()
             │
             └─ Return: ModuleResponse { success: true, result: {...}, elapsed_ms: 4 }
 ```

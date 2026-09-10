@@ -97,7 +97,7 @@ const connectWebSocket = () => {
 
   ws.onopen = () => {
     connected.value = true
-    term.write('\r\n\x1b[38;5;46m[*] Connected to X404X Backend Console\x1b[0m\r\n')
+    term.write('\r\n\x1b[38;5;46m[*] Connected to Vesper Backend Console\x1b[0m\r\n')
   }
 
   ws.onmessage = (event) => {

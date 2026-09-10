@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
-	bridgev1 "github.com/ruby570bocadito/x404x/pkg/proto/gen/bridge"
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/logger"
+	bridgev1 "github.com/ruby570bocadito/vesper/pkg/proto/gen/bridge"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

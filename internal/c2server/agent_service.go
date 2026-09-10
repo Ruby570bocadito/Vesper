@@ -5,8 +5,8 @@ import (
 	"io"
 	"time"
 
-	agentv1 "github.com/ruby570bocadito/x404x/pkg/proto/gen/agent"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	agentv1 "github.com/ruby570bocadito/vesper/pkg/proto/gen/agent"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 // agentServiceServer implements agentv1.AgentServiceServer.

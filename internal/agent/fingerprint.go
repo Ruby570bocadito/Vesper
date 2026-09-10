@@ -114,7 +114,7 @@ func (fs *FingerprintScanner) scanWithSSDEEP() {
 
 func (fs *FingerprintScanner) Report() string {
 	var report strings.Builder
-	report.WriteString("X404X FINGERPRINT SCAN REPORT\n")
+	report.WriteString("Vesper FINGERPRINT SCAN REPORT\n")
 	report.WriteString(fmt.Sprintf("Matches: %d\n", len(fs.Matches)))
 	for _, m := range fs.Matches {
 		fmt.Fprintf(&report, "  %s [%s] => %s (%.0f%%)\n", m.Binary, m.Function, m.CVE, m.Conf*100)

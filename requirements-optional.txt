@@ -1,0 +1,15 @@
+# Vesper — optional dependencies
+# These power specific handlers but are NOT required for the core bridge:
+#
+#   scapy      — attacks.py LLMNR sniffing fallback (run_responder)
+#   impacket   — bloodhound.py AD collection helpers
+#   ollama     — bridge.py local LLM decision support (ai_analyze)
+#   PyYAML     — tooling that parses config.yaml programmatically
+#
+# Install what you need:
+#   pip install scapy impacket ollama PyYAML
+#
+# Removed from the old requirements.txt (unused by any handler):
+#   torch, onnxruntime, opencv-python, dlib, pymodbus, numpy,
+#   fpdf2, python-docx, qrcode, Pillow, websocket-client,
+#   rich, click, cryptography, requests, pytest-asyncio

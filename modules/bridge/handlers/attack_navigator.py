@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MITRE ATT&CK Navigator Layer Export for X404X Campaigns.
+"""MITRE ATT&CK Navigator Layer Export for Vesper Campaigns.
 
 Generates an ATT&CK Navigator v4.9 compatible layer JSON from campaign
 decisions, exploits, and recon data. Each technique used in the campaign
@@ -73,7 +73,7 @@ TECHNIQUE_DB = {
 
 
 def generate_navigator_layer(
-    campaign_name: str = "X404X Campaign",
+    campaign_name: str = "Vesper Campaign",
     campaign_id: str = "",
     techniques: Optional[List[Dict[str, Any]]] = None,
     description: str = "",
@@ -98,7 +98,7 @@ def generate_navigator_layer(
         techniques = []
 
     layer = {
-        "name": f"{campaign_name} — X404X Campaign",
+        "name": f"{campaign_name} — Vesper Campaign",
         "versions": {
             "attack": "16",
             "navigator": "4.9.0",
@@ -188,7 +188,7 @@ def generate_navigator_layer(
 
 
 def generate_from_campaign(decisions: List[Dict], exploits: List[Dict],
-                           campaign_name: str = "X404X",
+                           campaign_name: str = "Vesper",
                            campaign_id: str = "") -> Dict[str, Any]:
     """Generate a Navigator layer from campaign decisions and exploits.
 
@@ -242,10 +242,14 @@ def save_layer(layer: Dict[str, Any], path: str = "reports/attack_navigator_laye
     Returns:
         Absolute path to saved file
     """
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from safety import resolve_in_lab
+    resolved = resolve_in_lab(path)
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    with open(resolved, "w") as f:
         json.dump(layer, f, indent=2)
-    return os.path.abspath(path)
+    return str(resolved.resolve())
 
 
 # ============================================================
@@ -262,7 +266,7 @@ def handle_attack_layer(params: dict) -> dict:
     """Generate an ATT&CK Navigator layer from campaign data.
 
     Params:
-        campaign_name: Campaign name (default: "X404X Campaign")
+        campaign_name: Campaign name (default: "Vesper Campaign")
         campaign_id: Campaign ID
         decisions: List of decision dicts (optional)
         exploits: List of exploit dicts (optional)
@@ -272,7 +276,7 @@ def handle_attack_layer(params: dict) -> dict:
     Returns:
         dict with path, technique_count, and layer summary
     """
-    campaign_name = params.get("campaign_name", "X404X Campaign")
+    campaign_name = params.get("campaign_name", "Vesper Campaign")
     campaign_id = params.get("campaign_id", "")
     decisions = params.get("decisions", [])
     exploits = params.get("exploits", [])

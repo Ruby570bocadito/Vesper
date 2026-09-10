@@ -1,11 +1,11 @@
-# X404X — Vulnerable Test Container
+# Vesper — Vulnerable Test Container
 # ==================================
 # Deliberately vulnerable container for end-to-end testing.
 # Includes: SUID binaries, weak SSH, writable cron, sudo misconfig,
 # Redis no-auth, Docker socket, NFS no_root_squash simulation.
 #
-# Build: docker build -f lab/Dockerfile.vulnerable -t x404x-vuln .
-# Run:   docker run --rm -it x404x-vuln bash
+# Build: docker build -f lab/Dockerfile.vulnerable -t vesper-vuln .
+# Run:   docker run --rm -it vesper-vuln bash
 
 FROM ubuntu:24.04
 
@@ -66,9 +66,9 @@ RUN echo '/export *(rw,no_root_squash,sync,no_subtree_check)' > /etc/exports
 RUN apt-get install -y libcap2-bin 2>/dev/null || true && \
     setcap cap_setuid+ep /usr/bin/python3-suid 2>/dev/null || true
 
-# Copy X404X agent for testing
-COPY dist/agent-linux-amd64 /tmp/x404x-agent 2>/dev/null || true
-COPY dist/x404x /usr/local/bin/x404x 2>/dev/null || true
+# Copy Vesper agent for testing
+COPY dist/agent-linux-amd64 /tmp/vesper-agent 2>/dev/null || true
+COPY dist/vesper /usr/local/bin/vesper 2>/dev/null || true
 
 # Start SSH
 RUN mkdir -p /run/sshd

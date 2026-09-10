@@ -1,48 +1,37 @@
-# Security Policy
+# Security Policy — Vesper
 
-## Reporting a Vulnerability
+## The safety model (what the code actually enforces)
 
-X404X is an academic project for cybersecurity education. If you discover a security vulnerability, please:
+Vesper is a red-team **education platform**. Its safety posture is enforced
+in code, not in documentation:
 
-1. **DO NOT** open a public GitHub issue
-2. Email the project maintainer with details
-3. Allow 72 hours for initial response
+| Control | Enforcement point | Default |
+|---|---|---|
+| Lab-only posture | `cmd/vesper/safety.go` → sets `VESPER_LAB_ONLY=1` for child processes | **ON** |
+| File sandbox | `modules/bridge/safety.py` — `resolve_in_lab()` refuses any path outside `VESPER_LAB_ROOT` | ON |
+| Authorization gate | CLI flag `--yes-i-am-authorized` or env `VESPER_AUTHORIZED=1` | required for live ops |
+| Bind protection | unauthorized runs override `server.host` to `127.0.0.1` | ON |
+| Runtime kill switch | env `VESPER_KILLSWITCH=1` (refuses to start) or console command `kill_switch EMERGENCY_STOP` | available |
+| Destructive handlers | `run_cleanup` log-wipe/timestamps/persistence-removal require authorization; sandboxed copies otherwise | ON |
+| Dashboard auth | startup warning when `auth_token` is empty | ON |
+| CI mutation guard | the `bridge` CI job fails if tests modify any tracked file | ON |
 
-## Supported Versions
+## What Vesper will NOT do
 
-| Version | Supported |
-|---------|-----------|
-| v3.2    | ✅ Active |
-| v3.1    | ✅ Active |
-| v3.0    | ✅ Active |
-| v2.x    | ❌ End of life |
-| v1.x    | ❌ End of life |
+- No ransomware, no destructive payloads, no "psychological operations"
+  modules (all removed in the 1.0.0 remodel)
+- No persistence installation outside the lab sandbox without authorization
+- No telemetry, no phone-home, no hard-coded infrastructure
+- Tests never write to repository files (enforced by CI)
 
-## Security Model
+## Reporting a vulnerability
 
-X404X is designed for **authorized use only** in:
-- Controlled laboratory environments
-- CTF competitions with explicit permission
-- Penetration testing with written authorization
+Open a GitHub Security Advisory ("Report a vulnerability" on the Security
+tab) or contact the maintainer directly. Please include reproduction steps
+and affected commit.
 
-### Safety Controls
+## Responsible use
 
-| Control | Default | Purpose |
-|---------|---------|---------|
-| Kill Switch | Enabled | Emergency stop all agents |
-| Geofencing | Enabled | RFC 1918 private networks only |
-| Auto-Destruct | 2 hours | Agents self-terminate |
-| Max Infections | 1000 | Hard limit on compromised hosts |
-| No Persistence | Enabled | Persistence requires explicit activation |
-| Offline AI | Default | Ollama runs locally, no data exfiltration |
-
-### Dependency Security
-
-Dependencies are managed via:
-- Go: `go.mod` + `go.sum` (cryptographic verification)
-- Python: `requirements.txt` (pinned versions)
-- Node.js: `package.json` + `package-lock.json` (audited)
-
-### Responsible Disclosure
-
-We follow the [RFPolicy](https://en.wikipedia.org/wiki/RFPolicy) for vulnerability disclosure.
+Use only against systems you own or have **written** authorization to test.
+The default posture is lab-only; bypassing it against third-party systems is
+illegal in most jurisdictions and against the spirit of this project.
