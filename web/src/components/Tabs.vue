@@ -34,7 +34,6 @@ const tabs = computed(() => [
   { id: 'builder', label: 'Payloads', badge: null },
   { id: 'ai', label: 'AI', badge: null },
   { id: 'creds', label: 'Creds', badge: null },
-  { id: 'browser', label: 'Browser', badge: null },
   { id: 'terminal', label: 'Terminal', badge: null },
   { id: 'metrics', label: 'Metrics', badge: null },
   { id: 'docs', label: 'Docs', badge: null },

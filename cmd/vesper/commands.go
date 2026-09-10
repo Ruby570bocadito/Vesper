@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	stdos "os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ruby570bocadito/vesper/internal/appstate"
+	"github.com/ruby570bocadito/vesper/internal/recon"
 )
 
 // GetOrCreateState returns the shared AppState, creating one lazily if needed.
@@ -247,13 +250,26 @@ func reconCmd() *cobra.Command {
 					return
 				}
 			}
-			printWarn("Bridge offline — running in simulation mode")
-			printOK("Scan complete")
-			tbl := newTable("Host", "Port", "Service", "State")
-			tbl.addRow(target, "22", "SSH", cSuccess+"open"+ansiR)
-			tbl.addRow(target, "80", "HTTP", cSuccess+"open"+ansiR)
-			tbl.addRow(target, "443", "HTTPS", cSuccess+"open"+ansiR)
-			tbl.render()
+			printWarn("Bridge offline — using the native TCP scanner")
+			host := strings.TrimSpace(target)
+			if host == "" || strings.Contains(host, "/") {
+				printErr("native scanner supports single IPs only; CIDR sweeps land in v1.2")
+				return
+			}
+			printInfo("Scanning %d common TCP ports on %s%s%s …", len(recon.DefaultPorts), cWhite+ansiB, host, ansiR)
+			res := recon.ScanHost(c.Context(), host, recon.DefaultPorts, 1500*time.Millisecond, true)
+			tbl := newTable("Port", "State", "Service", "Banner")
+			open := 0
+			for _, r := range res {
+				if r.Open {
+					open++
+					tbl.addRow(fmt.Sprintf("%d", r.Port), cSuccess+"open"+ansiR, recon.ServiceGuess(r.Port), trunc(r.Banner, 28))
+				}
+			}
+			printOK("Scan complete — %d/%d ports open", open, len(res))
+			if open > 0 {
+				tbl.render()
+			}
 			fmt.Fprintln(ConsoleOut)
 		},
 	}
@@ -264,19 +280,59 @@ func reconCmd() *cobra.Command {
 		Example: "  vesper recon osint -d target.com",
 		Run: func(c *cobra.Command, a []string) {
 			domain, _ := c.Flags().GetString("domain")
-			printInfo("Gathering OSINT for %s%s%s …", cWhite+ansiB, domain, ansiR)
-			printOK("OSINT collection complete — results saved to reports/")
+			printInfo("OSINT for %s%s%s …", cWhite+ansiB, domain, ansiR)
+			printWarn("OSINT gathering is not implemented yet (roadmap v1.2) — no results were produced.")
 		},
 	}
 
 	dnsCmd := &cobra.Command{
 		Use:     "dns",
-		Short:   "DNS enumeration (subdomains, MX, NS, TXT)",
+		Short:   "DNS enumeration (A, MX, NS, TXT)",
 		Example: "  vesper recon dns -d target.com",
 		Run: func(c *cobra.Command, a []string) {
 			domain, _ := c.Flags().GetString("domain")
+			if domain == "" {
+				printErr("--domain is required")
+				return
+			}
 			printInfo("Enumerating DNS for %s%s%s …", cCyan+ansiB, domain, ansiR)
-			printOK("DNS enumeration complete")
+
+			resolver := &net.Resolver{}
+			ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
+			defer cancel()
+
+			tbl := newTable("Type", "Value")
+			rows := 0
+			if addrs, err := resolver.LookupHost(ctx, domain); err == nil {
+				for _, addr := range addrs {
+					tbl.addRow("A/AAAA", addr)
+					rows++
+				}
+			}
+			if mxs, err := resolver.LookupMX(ctx, domain); err == nil {
+				for _, mx := range mxs {
+					tbl.addRow("MX", fmt.Sprintf("%s %d", mx.Host, mx.Pref))
+					rows++
+				}
+			}
+			if nss, err := resolver.LookupNS(ctx, domain); err == nil {
+				for _, ns := range nss {
+					tbl.addRow("NS", ns.Host)
+					rows++
+				}
+			}
+			if txts, err := resolver.LookupTXT(ctx, domain); err == nil {
+				for _, txt := range txts {
+					tbl.addRow("TXT", trunc(txt, 48))
+					rows++
+				}
+			}
+			if rows == 0 {
+				printWarn("No DNS records found for %s (check the domain and your resolver)", domain)
+				return
+			}
+			printOK("DNS enumeration — %d records", rows)
+			tbl.render()
 		},
 	}
 
@@ -396,13 +452,7 @@ func exploitCmd() *cobra.Command {
 					}
 				}
 			}
-			printWarn("Bridge offline — simulation mode")
-			printOK("Scan complete")
-			tbl := newTable("Vector", "Type", "Risk", "Details")
-			tbl.addRow("sudo NOPASSWD", "sudo", cDanger+ansiB+"Critical"+ansiR, "/etc/sudoers misconfiguration")
-			tbl.addRow("SUID /usr/bin/vim", "SUID", cWarn+"High"+ansiR, "GTFObins escape available")
-			tbl.addRow("Docker group", "Container", cWarn+"High"+ansiR, "Host filesystem accessible")
-			tbl.render()
+			printErr("Bridge offline — privesc checks require the bridge; no results are invented.")
 			fmt.Fprintln(ConsoleOut)
 		},
 	}
@@ -419,7 +469,8 @@ func exploitCmd() *cobra.Command {
 				return
 			}
 			printInfo("Executing %s%s%s against %s%s%s …", cOrange+ansiB, cve, ansiR, cWhite+ansiB, target, ansiR)
-			printOK("Exploit executed — check %svesper agent list%s for new sessions.", cSuccess, ansiR)
+			printWarn("Vesper does not auto-exploit from the CLI.")
+			printInfo("Load a module in the console (%suse <module> → run%s) or let a campaign dispatch decisions.", cSuccess, ansiR)
 		},
 	}
 

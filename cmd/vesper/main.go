@@ -1,8 +1,8 @@
 // Vesper — Semi-Autonomous Red Team Platform
 //
 // Entry point. All modes are served by the cobra command tree in
-// root.go (Execute); main() only fast-paths `version` so smoke tests
-// stay instant.
+// root.go (Execute); main() only fast-paths `--version`/`-v` so
+// scripts and smoke tests get an instant, side-effect-free answer.
 //
 //   vesper                 → interactive console (msfconsole-style)
 //   vesper --dashboard     → REST API + WebSocket + C2 backend
@@ -23,10 +23,10 @@ import (
 func main() {
 	args := os.Args[1:]
 
-	// fast path: version must never touch disk or config
+	// fast path: --version/-v must never touch disk or config
 	for _, a := range args {
-		if a == "version" || a == "--version" || a == "-v" {
-			fmt.Println("Vesper v1.0.0")
+		if a == "--version" || a == "-v" {
+			fmt.Printf("Vesper v%s\n", version)
 			return
 		}
 	}

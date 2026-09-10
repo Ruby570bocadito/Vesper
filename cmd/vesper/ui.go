@@ -113,10 +113,11 @@ func printPanel(title, body string) {
 	fmt.Fprintf(ConsoleOut, "  %s╰%s╯%s\n", cMuted, strings.Repeat("─", width+1), ansiR)
 }
 
-// printBigBanner renders the VESPER ASCII banner.
-func printBigBanner() {
-	gradient := []string{cDanger, cOrange, cWarn, cWarn, cOrange, cDanger}
-	lines := []string{
+// bannerLines returns the VESPER ASCII art (ANSI Shadow font), unclored.
+// Every surface (console, dashboard, --help, version) renders the same
+// block so the identity stays consistent across modes.
+func bannerLines() []string {
+	return []string{
 		`██╗   ██╗███████╗███████╗██████╗ ███████╗██████╗ `,
 		`██║   ██║██╔════╝██╔════╝██╔══██╗██╔════╝██╔══██╗`,
 		`██║   ██║█████╗  █████╗  ██████╔╝█████╗  ██████╔╝`,
@@ -124,11 +125,18 @@ func printBigBanner() {
 		` ╚████╔╝ ███████╗███████╗██║  ██║███████╗██║  ██║`,
 		`  ╚═══╝  ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝`,
 	}
+}
+
+// printBigBanner renders the VESPER ASCII banner with its dusk gradient
+// (red → orange → amber and back) and the version tag.
+func printBigBanner() {
+	gradient := []string{cDanger, cOrange, cWarn, cWarn, cOrange, cDanger}
 	fmt.Fprintln(ConsoleOut)
-	for i, l := range lines {
+	for i, l := range bannerLines() {
 		fmt.Fprintln(ConsoleOut, "  "+gradient[i]+l+ansiR)
 	}
-	fmt.Fprintf(ConsoleOut, "  %s  semi-autonomous red team platform%s\n\n", cMuted, ansiR)
+	fmt.Fprintf(ConsoleOut, "  %s  semi-autonomous red team platform%s  %sv%s%s\n\n",
+		cMuted, ansiR, cPrimary, version, ansiR)
 }
 
 // ─── Widgets ──────────────────────────────────────────────────────────────────

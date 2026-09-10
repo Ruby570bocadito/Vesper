@@ -28,13 +28,19 @@ const killSwitchEnv = "VESPER_KILLSWITCH"
 var authorized bool
 
 // applySafety enforces the safety posture before any mode starts.
-func applySafety(c *config.Config) {
+// quiet=true (used by `vesper version`) keeps the enforcement — kill
+// switch, geofence — but skips the informational output.
+func applySafety(c *config.Config, quiet bool) {
 	authorized = authorizedFlag || strings.EqualFold(os.Getenv("VESPER_AUTHORIZED"), "1")
 
 	// Runtime kill switch: hard stop before anything else starts.
 	if v := os.Getenv(killSwitchEnv); v != "" && !strings.EqualFold(v, "0") {
 		fmt.Fprintln(os.Stderr, "  [!] Kill switch active (VESPER_KILLSWITCH set) — refusing to start.")
 		os.Exit(130)
+	}
+
+	if quiet {
+		return
 	}
 
 	if authorized {

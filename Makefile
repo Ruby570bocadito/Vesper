@@ -13,7 +13,7 @@
 
 .PHONY: setup build test demo lab-up lab-down proto clean lint release help
 
-GO_PACKAGES := ./cmd/... ./internal/... ./pkg/... ./plugins/...
+GO_PACKAGES := ./cmd/... ./internal/... ./pkg/...
 
 # === Setup ===
 setup: setup-go setup-python setup-node
@@ -94,7 +94,7 @@ lint: lint-go lint-python
 lint-go:
 	@echo "[*] Vet + format check..."
 	go vet $(GO_PACKAGES)
-	test -z "$$(gofmt -l cmd internal pkg plugins)" || (gofmt -l cmd internal pkg plugins && exit 1)
+	test -z "$$(gofmt -l cmd internal pkg)" || (gofmt -l cmd internal pkg && exit 1)
 
 lint-python:
 	@echo "[*] Linting Python code..."

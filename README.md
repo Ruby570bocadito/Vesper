@@ -1,5 +1,7 @@
 # Vesper
 
+![Vesper banner](docs/images/banner.png)
+
 **Semi-autonomous red team operations platform** — Go core, Python bridge, Vue 3 dashboard.
 
 >formerly `X404X`. Remodelled in 2026: single Go module, honest docs, real safety controls.

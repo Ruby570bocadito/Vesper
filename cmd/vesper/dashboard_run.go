@@ -97,7 +97,7 @@ func startDashboard(cfg *config.Config) error {
 
 func printDashboardBanner() {
 	printBigBanner()
-	fmt.Printf("  %s%sDASHBOARD%s  %s·%s  %sv1.0.0%s\n",
-		cPrimary, ansiB, ansiR, cMuted, ansiR, cMuted, ansiR)
+	fmt.Printf("  %s%sDASHBOARD%s  %s·%s  %sv%s%s\n",
+		cPrimary, ansiB, ansiR, cMuted, ansiR, cMuted, version, ansiR)
 	fmt.Printf("  %s%s\n\n", cMuted, strings.Repeat("─", 46))
 }

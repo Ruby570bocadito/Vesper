@@ -31,14 +31,11 @@ cd tests && bash integration_test.sh
 # Ayuda
 ./vesper --help
 
-# Listar módulos (deben ser 162)
-./vesper modules categories
-./vesper modules list
+# Listar módulos (catálogo honesto)
+./vesper help
 
-# Simular despliegue
-
-# Ver víctimas
-./vesper victims list
+# Escaneo real (scanner TCP nativo)
+./vesper recon scan -t 127.0.0.1
 ```
 
 ---

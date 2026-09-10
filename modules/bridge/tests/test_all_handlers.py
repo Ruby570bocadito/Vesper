@@ -22,7 +22,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "handlers"))
 
 EXPECTED_MODULES = [
     "attacks",
-    "phase_1_4",
     "cred_dump",
     "bloodhound",
     "attack_navigator",

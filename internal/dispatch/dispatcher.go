@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -213,128 +212,30 @@ func (d *Dispatcher) DispatchDecisionSync(ctx context.Context, campaign *types.C
 	return dr, nil
 }
 
+// mapTacticToModule maps an ATT&CK tactic to a bridge module that
+// actually exists in this repository. Tactics without a real
+// implementation map to "" — the dispatcher then reports that
+// honestly instead of dispatching a fictional payload (the
+// pre-remodel behavior that shipped imaginary modules).
 func (d *Dispatcher) mapTacticToModule(tactic, technique string, campaign *types.Campaign) string {
-	techLower := strings.ToLower(technique)
-
-	// Intelligent selection based on technique
-	if tactic == "Initial Access" || tactic == "Lateral Movement" {
-		if strings.Contains(techLower, "ssh") {
-			return "exploit/ssh_bruteforce"
-		}
-		if strings.Contains(techLower, "smb") || strings.Contains(techLower, "eternalblue") || strings.Contains(techLower, "ms17-010") {
-			return "exploit/eternalblue"
-		}
-	}
-	if tactic == "Privilege Escalation" {
-		if strings.Contains(techLower, "suid") {
-			return "exploit/privesc_suid"
-		}
-		if strings.Contains(techLower, "zerologon") {
-			return "exploit/zerologon"
-		}
-	}
-	if tactic == "Persistence" {
-		if strings.Contains(techLower, "cron") {
-			return "post/persist_cron"
-		}
-	}
-	if tactic == "Reconnaissance" {
+	switch strings.ToLower(strings.TrimSpace(tactic)) {
+	case "recon", "reconnaissance", "discovery":
 		return "recon"
+	case "credential access", "collection":
+		return "cred_dump/dump"
 	}
-	if tactic == "Actions on Objective" {
-		if strings.Contains(techLower, "ransomware") || strings.Contains(techLower, "encrypt") {
-			return "ransomware/execute"
-		}
-	}
-
-	mappings := map[string][]string{
-		"Reconnaissance": {
-			"recon", "auxiliary/recon_osint", "v27/phishing_infra",
-			"v28/iot_identity_theft", "v26/cloud_nemesis",
-			"hydra/dns_rebinding", "rf_contagion/baseband",
-		},
-		"Initial Access": {
-			"exploit/ssh_bruteforce", "exploit/eternalblue", "v27/spear_phish_ai",
-			"v27/smishing_sms", "v28/fake_vulns", "v27/phishing_infra",
-			"hydra/cicd_webhooks", "hydra/usb_adb", "hydra/qr_worm",
-			"ai/deepfake_vishing", "hydra/powerline",
-		},
-		"Privilege Escalation": {
-			"exploit/privesc_suid", "exploit/zerologon", "v28/patchguard_bypass",
-			"v27/kernel_instrument", "v29/microcode_corrupt",
-			"evasion/byovd_loader", "evasion/dkom",
-		},
-		"Persistence": {
-			"post/persist_cron", "v26/bootkit_smm", "v27/uefi_bootkit",
-			"v27/hypervisor_ring1", "v29/nic_persist", "v29/intel_me_flash",
-			"evasion/wer_persistence", "evasion/blue_pill", "evasion/mft_slack",
-		},
-		"Command and Control": {
-			"v26/social_c2", "v26/cloud_nemesis", "v210/phantom_evasion",
-			"v28/cdn_injection", "v28/keyboard_led",
-			"c2/multi_channel", "c2/spiffe_mtls", "c2/ed25519",
-			"c2/kyber_hybrid", "c2/proto_obfuscate", "c2/dashboard_ops",
-		},
-		"Lateral Movement": {
-			"exploit/eternalblue", "ransomware/worm", "v29/network_ghosts",
-			"v28/isp_bgp", "blockz/firmware_worm",
-			"hydra/ultrasound", "hydra/vlan_jump", "hydra/pjl_worm",
-			"propagation/kerberos_del", "propagation/imdsv2_bypass",
-		},
-		"Collection": {
-			"ransomware/scan", "ransomware/identity_destroy",
-			"v28/iot_identity_theft", "v28/emotion_encrypt",
-			"ai/federated_learn",
-		},
-		"Exfiltration": {
-			"blockz/airgap_exfil", "v28/keyboard_led",
-			"v29/acoustic_resonance", "blockz/airgap_exfil",
-			"hydra/dns_rebinding",
-		},
-		"Actions on Objective": {
-			"ransomware/execute", "v210/apocalipsis", "v29/hdd_firmware_destroy",
-			"v29/vrm_overvoltage", "v29/usb_killer", "v29/digital_thermite",
-			"evasion/anti_forensics_adv", "propagation/chronos_ntp",
-		},
-		"Defense Evasion": {
-			"evasion/byovd_loader", "evasion/dkom", "evasion/anti_reversing",
-			"evasion/anti_forensics_adv", "evasion/wfp_dns_poison",
-			"evasion/lolbin_chainer", "evasion/wfp_kernel_dns",
-			"ai/jit_polymorphism", "loader/cross_platform",
-			"propagation/reflective_dll", "bridge/wazero",
-		},
-	}
-
-	opts, ok := mappings[tactic]
-	if !ok || len(opts) == 0 {
-		phaseMods := registry.GetModulesForPhase(campaign.Phase)
-		if len(phaseMods) > 0 {
-			return phaseMods[rand.Intn(len(phaseMods))].Name
-		}
-		return ""
-	}
-
-	return opts[rand.Intn(len(opts))]
+	return ""
 }
 
-func mapModuleToBridgeFunction(moduleName string) string {
-	mapping := map[string]string{
-		"exploit/ssh_bruteforce":   "scan",
-		"post/persist_cron":        "execute",
-		"ransomware/scan":          "scan",
-		"ransomware/propagate":     "propagate",
-		"ransomware/encrypt":       "encrypt",
-		"ransomware/execute":       "execute",
-		"v26/pomdp_decide":         "pomdp_decide",
-		"v27/uefi_bootkit":         "uefi_bootkit",
-		"v29/hdd_firmware_destroy": "hdd_firmware_destroy",
-		"v210/apocalipsis":         "apocalipsis",
+// mapModuleToBridgeFunction splits a module reference into the
+// (bridge module, function) pair the Python bridge dispatches on.
+// Inline modules ignore the function; "group/function" references map
+// onto handler-registry groups (e.g. "cred_dump/dump").
+func mapModuleToBridgeFunction(moduleName string) (string, string) {
+	if i := strings.Index(moduleName, "/"); i > 0 {
+		return moduleName[:i], moduleName[i+1:]
 	}
-
-	if fn, ok := mapping[moduleName]; ok {
-		return fn
-	}
-	return "execute"
+	return moduleName, ""
 }
 
 func (d *Dispatcher) selectBestAgent(campaign *types.Campaign, decision *types.Decision) *types.Agent {
@@ -387,8 +288,8 @@ func (d *Dispatcher) tryBridge(ctx context.Context, moduleName string, decision 
 		"phase":  string(campaign.Phase),
 	}
 
-	fnName := mapModuleToBridgeFunction(moduleName)
-	result, err := bridge.CallRaw(ctx, moduleName, fnName, params)
+	bridgeMod, bridgeFn := mapModuleToBridgeFunction(moduleName)
+	result, err := bridge.CallRaw(ctx, bridgeMod, bridgeFn, params)
 	if err != nil {
 		d.log.Printf("Bridge call failed for %s: %v", moduleName, err)
 		return
@@ -410,8 +311,8 @@ func (d *Dispatcher) tryBridgeSync(ctx context.Context, moduleName string, decis
 		"phase":  string(campaign.Phase),
 	}
 
-	fnName := mapModuleToBridgeFunction(moduleName)
-	result, err := bridge.CallRaw(ctx, moduleName, fnName, params)
+	bridgeMod, bridgeFn := mapModuleToBridgeFunction(moduleName)
+	result, err := bridge.CallRaw(ctx, bridgeMod, bridgeFn, params)
 	if err != nil {
 		return &DispatchResult{Success: false}, err
 	}

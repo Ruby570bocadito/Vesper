@@ -15,7 +15,6 @@
       <AIConsole v-else-if="activeTab === 'ai'" />
       <TerminalWidget v-else-if="activeTab === 'terminal'" />
       <MetricsPanel v-else-if="activeTab === 'metrics'" />
-      <BrowserMesh v-else-if="activeTab === 'browser'" />
       <CredentialVault v-else-if="activeTab === 'creds'" />
       <CampaignTimeline v-else-if="activeTab === 'timeline'" />
       <DocsPanel v-else />
@@ -43,7 +42,6 @@ const PayloadBuilder = defineAsyncComponent(() => import('./views/PayloadBuilder
 const TerminalWidget = defineAsyncComponent(() => import('./views/TerminalWidget.vue'))
 const MetricsPanel = defineAsyncComponent(() => import('./views/MetricsPanel.vue'))
 const DocsPanel = defineAsyncComponent(() => import('./views/DocsPanel.vue'))
-const BrowserMesh = defineAsyncComponent(() => import('./views/BrowserMesh.vue'))
 const CredentialVault = defineAsyncComponent(() => import('./views/CredentialVault.vue'))
 const CampaignTimeline = defineAsyncComponent(() => import('./views/CampaignTimeline.vue'))
 import {

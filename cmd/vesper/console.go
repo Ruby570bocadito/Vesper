@@ -3,12 +3,13 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/ruby570bocadito/vesper/internal/agent"
 	"github.com/ruby570bocadito/vesper/internal/appstate"
@@ -17,12 +18,6 @@ import (
 
 // ConsoleOut is the global output writer for all CLI operations (allows WebSocket redirection)
 var ConsoleOut io.Writer = os.Stdout
-
-// ─── Compatibility color aliases (used by tui.go) ─────────────────────────────
-
-var (
-	colorReset = ansiR
-)
 
 // ─── Console types ────────────────────────────────────────────────────────────
 
@@ -94,6 +89,14 @@ func (c *Console) PrintPrompt() {
 
 func (c *Console) printBanner() {
 	printBigBanner()
+	// Safety posture always visible so the operator never forgets the mode.
+	if authorized {
+		fmt.Fprintf(ConsoleOut, "  %sPOSTURE%s  %s● AUTHORIZED ENGAGEMENT%s %s— config safety limits apply%s\n\n",
+			cInfo, ansiR, cSuccess, ansiR, cMuted, ansiR)
+	} else {
+		fmt.Fprintf(ConsoleOut, "  %sPOSTURE%s  %s● LAB-ONLY%s %s— sandboxed file ops, loopback bind only%s\n\n",
+			cInfo, ansiR, cWarn, ansiR, cMuted, ansiR)
+	}
 	printPanel("INTERACTIVE CONSOLE", fmt.Sprintf(
 		`  Type %shelp%s for a list of commands.
   Use %suse <module>%s to load an exploit or auxiliary module.
@@ -530,122 +533,81 @@ func (c *Console) cmdExploit(args []string) {
 		return
 	}
 
-	rh := c.ctx.Options["RHOSTS"]
-	if rh == "" {
-		rh = c.ctx.Options["RHOST"]
-	}
+	rh := c.targetOpt()
 
 	fmt.Fprintf(ConsoleOut, "\n  %s%s[*]%s Executing %s%s%s\n", cPrimary, ansiB, ansiR, cWhite+ansiB, c.ctx.Name, ansiR)
 	if rh != "" {
 		printInfo("Target: %s%s%s", cCyan+ansiB, rh, ansiR)
 	}
 
+	if !c.state.Bridge.Connected() {
+		printErr("Bridge offline — module NOT executed.")
+		printInfo("Vesper never simulates results. Start the bridge with %svesper --dashboard%s and retry.", cSuccess, ansiR)
+		return
+	}
+
 	ctx := context.Background()
 	camps := c.state.Orchestrator.ListCampaigns()
-	var campaignID string
+	campaignID := ""
 	if len(camps) > 0 {
 		campaignID = camps[0].ID
-		decisions, err := c.state.Orchestrator.Decide(ctx, campaignID)
-		if err == nil && len(decisions) > 0 {
-			top := decisions[0]
-			printInfo("AI decision: %s%s%s → %s%s%s (conf=%s%.0f%%%s)",
-				cInfo, top.Tactic, ansiR,
-				cWhite+ansiB, top.Technique, ansiR,
-				cSuccess, top.Confidence*100, ansiR)
-		}
 	}
 
-	moduleType := c.ctx.Name
-	isPrivesc := strings.Contains(moduleType, "privesc")
-	isRecon := strings.Contains(moduleType, "recon")
-	isPost := strings.Contains(moduleType, "post/")
-	isAuxiliary := strings.Contains(moduleType, "auxiliary/")
+	params := map[string]interface{}{
+		"target":  rh,
+		"module":  c.ctx.Name,
+		"options": c.ctx.Options,
+	}
 
-	bridgeExecuted := false
-	if c.state.Bridge.Connected() {
-		params := map[string]interface{}{
-			"target":  rh,
-			"module":  moduleType,
-			"options": c.ctx.Options,
-		}
-		var resp *agent.BridgeResponse
-		var err error
-		switch {
-		case isPrivesc:
-			resp, err = c.state.Bridge.Call(ctx, "privesc", "scan", params)
-		case isRecon:
-			resp, err = c.state.Bridge.Call(ctx, "recon", "scan", params)
-		default:
-			resp, err = c.state.Bridge.Call(ctx, "exploit", "run", params)
-		}
-		if err == nil && resp.Success {
-			bridgeExecuted = true
-			printOK("Module executed via bridge.")
-			if result, ok := resp.Result["output"]; ok {
-				fmt.Fprintf(ConsoleOut, "  %sOutput:%s %v\n", cMuted, ansiR, result)
-			}
-			if sid, ok := resp.Result["session"]; ok {
-				printOK("Session %s%v%s opened.", cSuccess+ansiB, sid, ansiR)
-			}
-		} else if err != nil {
-			printWarn("Bridge error (falling back to offline): %v", err)
-		}
+	// "group/function" references map onto handler groups; bare names
+	// hit the bridge's inline module registry.
+	var resp *agent.BridgeResponse
+	var err error
+	if i := strings.Index(c.ctx.Name, "/"); i > 0 {
+		resp, err = c.state.Bridge.Call(ctx, c.ctx.Name[:i], c.ctx.Name[i+1:], params)
 	} else {
-		printWarn("Bridge offline — running in simulation mode.")
+		resp, err = c.state.Bridge.Call(ctx, c.ctx.Name, "", params)
 	}
 
-	if !bridgeExecuted {
-		if rh != "" {
-			for _, h := range c.state.GetHosts() {
-				if h.IP == rh {
-					printInfo("Target context: %s (%s) ports=%v", h.Hostname, h.OS, h.OpenPorts)
-					break
-				}
-			}
+	if err != nil {
+		printErr("Bridge error: %v", err)
+		c.state.LogAudit("", campaignID, "exploit", "bridge_error", c.ctx.Name)
+		return
+	}
+	if resp == nil || !resp.Success {
+		msg := "module rejected the request"
+		if resp != nil && resp.Error != "" {
+			msg = resp.Error
 		}
-		switch {
-		case isPrivesc:
-			printInfo("Checking SUID binaries, sudo rules, cron, Docker socket …")
-			printOK("Privilege escalation scan complete.")
-		case isPost:
-			if strings.Contains(moduleType, "cleanup") {
-				printInfo("Wiping logs, clearing timestamps, removing artefacts …")
-			} else if strings.Contains(moduleType, "exfil") {
-				printInfo("Exfiltrating data from %s …", rh)
-			}
-			printOK("Post-exploitation module complete.")
-		default:
-			printInfo("Sending payload to %s …", rh)
-			printOK("Exploit sent.")
-		}
+		printErr("Module failed: %s", msg)
+		c.state.LogAudit("", campaignID, "exploit", "failed", c.ctx.Name)
+		return
 	}
 
-	if rh != "" && !isRecon && !isAuxiliary {
-		existing := c.state.GetAgents()
-		found := false
-		for _, a := range existing {
-			if a.LocalIP == rh {
-				found = true
-				break
-			}
+	printOK("Module executed via bridge.")
+	if result, ok := resp.Result["output"]; ok {
+		fmt.Fprintf(ConsoleOut, "  %sOutput:%s %v\n", cMuted, ansiR, result)
+	}
+	if res, ok := resp.Result["result"]; ok {
+		if out, err := json.MarshalIndent(res, "  ", "  "); err == nil {
+			fmt.Fprintf(ConsoleOut, "  %s%s\n", cMuted, string(out))
 		}
-		if !found {
-			sid := fmt.Sprintf("s%d", len(c.state.GetSessions())+1)
-			c.state.RegisterAgent(&types.Agent{
-				ID:          fmt.Sprintf("exploit-%d", len(existing)+1),
-				SessionID:   sid,
-				Hostname:    rh,
-				OS:          "unknown",
-				Username:    "user",
-				LocalIP:     rh,
-				Status:      types.AgentStatusOnline,
-				FirstSeen:   time.Now(),
-				LastCheckin: time.Now(),
-			})
-			printOK("Session %s%s%s opened!", cSuccess+ansiB, sid, ansiR)
-		}
+	}
+	if sid, ok := resp.Result["session"]; ok {
+		printOK("Session %s%v%s opened.", cSuccess+ansiB, sid, ansiR)
 	}
 	c.state.LogAudit("", campaignID, "exploit", "success", c.ctx.Name)
+}
+
+// targetOpt returns the configured target checking the canonical
+// option and its msf-style aliases.
+func (c *Console) targetOpt() string {
+	for _, k := range []string{"TARGET", "RHOSTS", "RHOST"} {
+		if v := strings.TrimSpace(c.ctx.Options[k]); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // ─── AI ───────────────────────────────────────────────────────────────────────
@@ -970,11 +932,8 @@ func (c *Console) cmdBuilder(args []string) {
 		fmt.Fprintf(ConsoleOut, "    --format <fmt>   Format (exe, dll, ps1, elf, sh, macho, shellcode) [default: exe]\n")
 		fmt.Fprintf(ConsoleOut, "    --lhost <ip>     C2 Listener IP / Domain\n")
 		fmt.Fprintf(ConsoleOut, "    --lport <port>   C2 Listener Port [default: 8443]\n")
-		fmt.Fprintf(ConsoleOut, "    --amsi           Inject AMSI/ETW bypass stubs\n")
-		fmt.Fprintf(ConsoleOut, "    --unhook         Resolve direct syscalls (Halo's Gate)\n")
-		fmt.Fprintf(ConsoleOut, "    --encoder <enc>  Obfuscation (none, shikata_ga_nai, aes256, rc4)\n")
 		fmt.Fprintf(ConsoleOut, "\n  Example:\n")
-		fmt.Fprintf(ConsoleOut, "    builder --os windows --arch x64 --format exe --lhost 10.0.0.5 --lport 443 --amsi --unhook --encoder aes256\n")
+		fmt.Fprintf(ConsoleOut, "    builder --os windows --arch x64 --format exe --lhost 10.0.0.5 --lport 443\n")
 		return
 	}
 
@@ -984,9 +943,6 @@ func (c *Console) cmdBuilder(args []string) {
 	format := "exe"
 	lhost := ""
 	lport := "8443"
-	amsi := false
-	unhook := false
-	encoder := "none"
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -1015,15 +971,6 @@ func (c *Console) cmdBuilder(args []string) {
 				lport = args[i+1]
 				i++
 			}
-		case "--encoder":
-			if i+1 < len(args) {
-				encoder = args[i+1]
-				i++
-			}
-		case "--amsi":
-			amsi = true
-		case "--unhook":
-			unhook = true
 		}
 	}
 
@@ -1032,33 +979,14 @@ func (c *Console) cmdBuilder(args []string) {
 		return
 	}
 
-	printInfo("Initializing payload builder engine...")
+	// Honest guidance: the console does not compile payloads — the
+	// real builder is `vesper payload generate` (cobra), which runs an
+	// actual `go build` of the agent. The pre-remodel flow here only
+	// slept, printed a fake size and claimed a file it never wrote.
 	printInfo("Target: %s/%s | Format: %s | C2: %s:%s", osTarget, arch, format, lhost, lport)
-
-	if amsi && osTarget == "windows" {
-		printWarn("Injecting AMSI/ETW bypass stubs")
-	}
-	if unhook && osTarget == "windows" {
-		printWarn("Resolving direct syscalls (Halo's Gate)")
-	}
-	if encoder != "none" {
-		printWarn("Applying %s obfuscation", encoder)
-	}
-
-	// Simulate build delay
-	fmt.Fprintf(ConsoleOut, "  %s%s[*]%s Compiling...", cPrimary, ansiB, ansiR)
-	time.Sleep(800 * time.Millisecond)
-	fmt.Fprintf(ConsoleOut, "\r  %s%s[*]%s Injecting configuration block...\n", cPrimary, ansiB, ansiR)
-	time.Sleep(1000 * time.Millisecond)
-	printOK("Payload compilation successful.")
-	printInfo("Size: 2.4 MB")
-
-	filename := fmt.Sprintf("vesper_implant_%s_%s.%s", osTarget, arch, format)
-	if format == "shellcode" {
-		filename = "payload.bin"
-	}
-
-	printOK("Saved to: %sdist/%s%s", cSuccess+ansiB, filename, ansiR)
+	printErr("The console cannot compile payloads.")
+	fmt.Fprintf(ConsoleOut, "  Use: %svesper payload generate --os %s --arch %s --c2 %s:%s%s\n\n",
+		cSuccess+ansiB, osTarget, arch, lhost, lport, ansiR)
 }
 
 func (c *Console) cmdLab(args []string) {
@@ -1066,57 +994,58 @@ func (c *Console) cmdLab(args []string) {
 		printErr("Usage: lab [up|down|status]")
 		return
 	}
+	// Real docker compose — the pre-remodel console version printed a
+	// hardcoded container table without touching Docker.
+	var sub string
 	switch args[0] {
 	case "up":
-		printInfo("Starting Vesper lab environment …")
-		tbl := newTable("Container", "IP", "Role")
-		tbl.addRow(cWhite+"vesper-attacker"+ansiR, cCyan+"172.20.0.10"+ansiR, "C2 / Operator")
-		tbl.addRow(cWhite+"vesper-target1"+ansiR, cCyan+"172.20.0.20"+ansiR, "Linux victim")
-		tbl.addRow(cWhite+"vesper-dashboard"+ansiR, cCyan+"172.20.0.30"+ansiR, "Web UI")
-		tbl.render()
-		printOK("Dashboard: %shttp://localhost:3000%s", cInfo+ansiB, ansiR)
+		sub = "up -d"
 	case "down":
-		printOK("Lab stopped.")
+		sub = "down"
 	case "status":
-		printInfo("Lab: 5 containers | use %slab up%s to start.", cSuccess, ansiR)
+		sub = "ps"
+	default:
+		printErr("Unknown lab command: %s (use up|down|status)", args[0])
+		return
 	}
+	cmdArgs := strings.Fields(sub)
+	out, err := exec.Command("docker", append([]string{"compose", "-f", "lab/docker-compose.yml"}, cmdArgs...)...).CombinedOutput()
+	if err != nil {
+		printErr("Docker compose failed: %v", err)
+		if len(out) > 0 {
+			fmt.Fprintln(ConsoleOut, cMuted+string(out)+ansiR)
+		}
+		return
+	}
+	if len(out) > 0 {
+		fmt.Fprintln(ConsoleOut, cMuted+string(out)+ansiR)
+	}
+	printOK("Lab %s complete.", args[0])
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 func defaultOptions(moduleName string) map[string]string {
-	opts := map[string]string{
-		"RHOSTS": "", "RHOST": "", "RPORT": "", "LHOST": "", "LPORT": "4444",
-	}
-	switch {
-	case strings.Contains(moduleName, "eternalblue"):
-		opts["RPORT"] = "445"
-	case strings.Contains(moduleName, "bluekeep"):
-		opts["RPORT"] = "3389"
-	case strings.Contains(moduleName, "redis"):
-		opts["RPORT"] = "6379"
-	case strings.Contains(moduleName, "ssh"):
-		opts["RPORT"] = "22"
-	case strings.Contains(moduleName, "smb"):
-		opts["RPORT"] = "445"
-	case strings.Contains(moduleName, "http"):
-		opts["RPORT"] = "80"
+	// Canonical option set: TARGET is what every bridge module reads.
+	// Anything else the operator sets with `set` is passed through to
+	// the module as-is (see cmdExploit params).
+	opts := map[string]string{"TARGET": ""}
+	if strings.Contains(moduleName, "recon") {
+		opts["MODE"] = "basic"
 	}
 	return opts
 }
 
 func optionDesc(module, option string) string {
 	switch option {
-	case "RHOSTS", "RHOST":
-		return "Target IP/hostname(s)"
+	case "TARGET", "RHOSTS", "RHOST":
+		return "Target IP/hostname"
+	case "MODE":
+		return "Scan mode: basic | stealth"
 	case "RPORT":
 		return "Target port"
-	case "LHOST":
-		return "Local callback IP"
-	case "LPORT":
-		return "Local callback port"
 	default:
-		return ""
+		return "module option"
 	}
 }
 
@@ -1125,16 +1054,6 @@ func bridgeStatus(connected bool) string {
 		return cSuccess + ansiB + "● connected" + ansiR
 	}
 	return cMuted + "○ disconnected" + ansiR
-}
-
-func countOnline(agents []*types.Agent) int {
-	n := 0
-	for _, a := range agents {
-		if a.Status == types.AgentStatusOnline || a.Status == types.AgentStatusActive {
-			n++
-		}
-	}
-	return n
 }
 
 // StartConsoleState is the entry point called from main.go.

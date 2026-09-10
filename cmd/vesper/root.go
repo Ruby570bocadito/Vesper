@@ -29,7 +29,10 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			cfg = config.Default()
 		}
-		applySafety(cfg)
+		// Identity/help queries answer quietly; every operational
+		// mode keeps the loud safety gate (see the demo GIF).
+		name := cmd.Name()
+		applySafety(cfg, name == "version" || name == "help" || name == "completion")
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -64,35 +67,26 @@ var rootCmd = &cobra.Command{
 func buildRootLong() string {
 	var sb strings.Builder
 
-	// Gradient banner
-	rows := []struct{ c, t string }{
-		{g1, `  ▄▄▄   ▄▄▄  ▄▄   ▄▄   ▄▄▄▄▄▄   ▄▄   ▄▄  ▄▄▄   ▄▄▄ `},
-		{g2, `  ▀██▄ ▄██▀  ██   ██  ██▀  ▀██  ██   ██  ▀██▄ ▄██▀ `},
-		{g3, `    ▀███▀    ███████  ██    ██  ███████    ▀███▀   `},
-		{g4, `  ▄██▀ ▀██▄       ██  ██▄  ▄██       ██  ▄██▀ ▀██▄ `},
-		{g5, `  ██▀   ▀██       ██   ▀████▀        ██  ██▀   ▀██ `},
-		{g6, `  ▀▀     ▀▀       ▀▀                 ▀▀  ▀▀     ▀▀ `},
-	}
+	// Same VESPER block the console and dashboard render.
 	sb.WriteString("\n")
-	for _, r := range rows {
-		sb.WriteString(r.c + r.t + ansiR + "\n")
+	gradient := []string{g1, g2, g3, g4, g5, g6}
+	for i, l := range bannerLines() {
+		sb.WriteString("  " + gradient[i] + l + ansiR + "\n")
 	}
-	fmt.Fprintf(&sb, "\n  %s%sSemi-Autonomous Red Team Platform%s  %sv1.0.0%s\n",
-		cPrimary, ansiB, ansiR, cMuted, ansiR)
+	fmt.Fprintf(&sb, "\n  %s%sSemi-Autonomous Red Team Platform%s  %sv%s%s\n",
+		cPrimary, ansiB, ansiR, cMuted, version, ansiR)
 	fmt.Fprintf(&sb, "  %s%s%s\n", cMuted, strings.Repeat("─", 52), ansiR)
 
 	fmt.Fprintf(&sb, `
 %sMODES%s
-  %svesper%s              → Interactive TUI (BubbleTea)
-  %svesper console%s      → msfconsole-style interactive shell
-  %svesper dashboard%s    → REST API + WebSocket + C2 server
-  %svesper <command>%s    → Traditional CLI mode
+  %svesper%s              → Interactive console (msf-style shell)
+  %svesper --dashboard%s  → REST API + WebSocket + C2 server
+  %svesper <command>%s    → One-shot CLI mode (campaign, recon, …)
 
 %sKILL CHAIN COVERAGE%s
   Recon → Weaponize → Deliver → Exploit → Install → C2 → Objectives
 `,
 		cPrimary+ansiB, ansiR,
-		cSuccess, ansiR,
 		cSuccess, ansiR,
 		cSuccess, ansiR,
 		cSuccess, ansiR,
@@ -130,17 +124,23 @@ func versionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Show version and build info",
 		Run: func(cmd *cobra.Command, args []string) {
-			printBigBanner()
-			printSection("BUILD INFO")
-			tbl := newTable("Field", "Value")
-			tbl.addRow(cInfo+"Version"+ansiR, cWhite+"v1.0.0"+ansiR)
-			tbl.addRow(cInfo+"Go"+ansiR, cWhite+runtime.Version()+ansiR)
-			tbl.addRow(cInfo+"OS/Arch"+ansiR, cWhite+runtime.GOOS+"/"+runtime.GOARCH+ansiR)
-			tbl.addRow(cInfo+"Author"+ansiR, "Rafael Gálvez  ·  Cisco NetAcad")
-			tbl.addRow(cInfo+"TFG"+ansiR, "Autonomous Red Team Platform — 2025/2026")
-			tbl.addRow(cInfo+"License"+ansiR, "MIT")
-			tbl.render()
-			fmt.Fprintln(ConsoleOut)
+			printVersion()
 		},
 	}
+}
+
+// printVersion renders the banner plus the build info table. It reads
+// nothing from disk, so main.go's --version fast path reuses it.
+func printVersion() {
+	printBigBanner()
+	printSection("BUILD INFO")
+	tbl := newTable("Field", "Value")
+	tbl.addRow(cInfo+"Version"+ansiR, cWhite+"v"+version+ansiR)
+	tbl.addRow(cInfo+"Go"+ansiR, cWhite+runtime.Version()+ansiR)
+	tbl.addRow(cInfo+"OS/Arch"+ansiR, cWhite+runtime.GOOS+"/"+runtime.GOARCH+ansiR)
+	tbl.addRow(cInfo+"Author"+ansiR, "Rafael Gálvez  ·  Cisco NetAcad")
+	tbl.addRow(cInfo+"TFG"+ansiR, "Autonomous Red Team Platform — 2025/2026")
+	tbl.addRow(cInfo+"License"+ansiR, "MIT")
+	tbl.render()
+	fmt.Fprintln(ConsoleOut)
 }

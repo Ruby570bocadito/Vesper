@@ -62,7 +62,7 @@ class TestBridgeProtocol(unittest.TestCase):
     def test_all_handler_function_names(self):
         """Verify every shipped handler module exists and exports register_routes."""
         handlers_dir = os.path.join(os.path.dirname(__file__), '..', 'handlers')
-        expected_files = ['attacks', 'phase_1_4', 'cred_dump', 'bloodhound', 'attack_navigator']
+        expected_files = ['attacks', 'cred_dump', 'bloodhound', 'attack_navigator']
 
         for fname in expected_files:
             module_path = os.path.join(handlers_dir, f"{fname}.py")
@@ -78,7 +78,7 @@ class TestBridgeProtocol(unittest.TestCase):
         registry = {}
 
         os.environ.setdefault('VESPER_LAB_ROOT', tempfile.mkdtemp(prefix='vesper_proto_test_'))
-        modules_to_try = ['attacks', 'phase_1_4', 'cred_dump', 'bloodhound', 'attack_navigator']
+        modules_to_try = ['attacks', 'cred_dump', 'bloodhound', 'attack_navigator']
 
         for mod_name in modules_to_try:
             try:
@@ -89,7 +89,7 @@ class TestBridgeProtocol(unittest.TestCase):
                 self.fail(f"handler module {mod_name} failed to import: {e}")
 
         total = sum(len(handlers) for handlers in registry.values())
-        self.assertGreater(total, 20, f"Expected >20 total handlers, got {total}")
+        self.assertGreater(total, 5, f"Expected >5 total handlers, got {total}")
 
     def test_bridge_protocol_compatibility(self):
         """Test forward/backward compatibility of protocol fields."""
@@ -140,12 +140,9 @@ class TestBridgeProtocol(unittest.TestCase):
 
         for group, handlers in registry.items():
             for handler_name in handlers:
-                if group == 'phase_1_4':
-                    parts = handler_name.split('/')
-                    self.assertEqual(len(parts), 2,
-                                     f"Handler name '{handler_name}' should be 'category/name'")
-                    self.assertIn(parts[0], ['evasion', 'c2', 'hydra', 'propagation',
-                                             'loader', 'ai', 'bridge', 'rf_contagion'])
+                self.assertNotIn('/', handler_name,
+                                 f"Handler name '{handler_name}' in group '{group}' "
+                                 "should be a plain function name")
 
 
 if __name__ == '__main__':

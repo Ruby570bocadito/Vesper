@@ -141,27 +141,21 @@ class ModuleRegistry:
 
 
 # ============================================================
-# HANDLER REGISTRY (all 107+ ransomware handlers in nested dict)
+# HANDLER REGISTRY (nested dict of real handler groups)
 # ============================================================
 
 _handler_registry: Dict[str, Dict[str, Callable]] = {}
 
 def _load_all_handlers():
-    """Load all ransomware + phase_1_4 handlers into _handler_registry."""
+    """Load the real bridge handler modules into _handler_registry."""
     handler_path = os.path.join(os.path.dirname(__file__), "handlers")
     if handler_path not in sys.path:
         sys.path.insert(0, handler_path)
 
     modules = [
-        "ransomware",
-        "ransomware_advanced",
-        "ransomware_blockz",
-        "ransomware_v26",
-        "ransomware_v27",
-        "ransomware_v28",
-        "ransomware_v29",
-        "ransomware_v210",
-        "phase_1_4",
+        "attacks",
+        "cred_dump",
+        "bloodhound",
         "attack_navigator",
     ]
 
@@ -288,7 +282,7 @@ def exfil_handler(params):
 def health_handler(params):
     modules = [{"name": m.name, "version": m.version, "phase": m.phase} for m in registry.list()]
     handler_count = sum(len(v) for v in _handler_registry.values())
-    return {"status": "ok", "inline_modules": len(modules), "ransomware_handlers": handler_count,
+    return {"status": "ok", "inline_modules": len(modules), "handler_groups": len(_handler_registry),
             "modules": modules}
 
 

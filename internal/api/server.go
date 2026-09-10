@@ -203,11 +203,6 @@ func (s *Server) registerRoutes() {
 	// === WebSocket ===
 	mux.HandleFunc("/ws", s.handleWebSocket)
 
-	// === PhantomWeb ===
-	mux.HandleFunc("/api/phantom/status", s.handlePhantomStatus)
-	mux.HandleFunc("/api/phantom/nodes", s.handlePhantomNodes)
-	mux.HandleFunc("/api/phantom/", s.handlePhantomAction)
-
 	// === Dashboard ===
 	mux.HandleFunc("/api/modules", s.handleModules)
 	mux.HandleFunc("/api/modules/push", s.handleModulePush)
@@ -853,71 +848,6 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 // ============================================================
 // PHANTOM HANDLERS
 // ============================================================
-
-func (s *Server) handlePhantomStatus(w http.ResponseWriter, r *http.Request) {
-	if s.state != nil && s.state.Bridge != nil && s.state.Bridge.Connected() {
-		resp, err := s.state.Bridge.CallRaw(r.Context(), "phantom", "status", nil)
-		if err == nil && resp != nil {
-			writeJSON(w, http.StatusOK, resp)
-			return
-		}
-	}
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"active": false, "totalNodes": 0, "activeNodes": 0,
-		"cookiesTotal": 0, "sessionsTotal": 0, "meshLatency": 0,
-	})
-}
-
-func (s *Server) handlePhantomNodes(w http.ResponseWriter, r *http.Request) {
-	if s.state != nil && s.state.Bridge != nil && s.state.Bridge.Connected() {
-		resp, err := s.state.Bridge.CallRaw(r.Context(), "phantom", "nodes", nil)
-		if err == nil && resp != nil {
-			if nodes, ok := resp["nodes"].([]interface{}); ok {
-				writeJSON(w, http.StatusOK, nodes)
-				return
-			}
-		}
-	}
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-
-func (s *Server) handlePhantomAction(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "POST required")
-		return
-	}
-	action := extractID(r.URL.Path, "/api/phantom/")
-	status := "unknown"
-	result := "No bridge connected"
-
-	if s.state != nil && s.state.Bridge != nil && s.state.Bridge.Connected() {
-		// Parse optional params from request body
-		params := map[string]interface{}{}
-		if r.Body != nil {
-			if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-				writeError(w, http.StatusBadRequest, "invalid JSON")
-				return
-			}
-		}
-		resp, err := s.state.Bridge.CallRaw(r.Context(), "phantom", action, params)
-		if err == nil && resp != nil {
-			status = "executed"
-			if msg, ok := resp["result"].(string); ok {
-				result = msg
-			} else {
-				result = "Phantom action executed via bridge"
-			}
-		} else {
-			status = "error"
-			result = err.Error()
-		}
-	}
-
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"action": action, "status": status,
-		"result": result,
-	})
-}
 
 // ============================================================
 // HEALTH

@@ -56,14 +56,6 @@ The dashboard proxies `/api` → Go server and `/ws` → WebSocket hub.
 |--------|------|-------------|
 | `POST` | `/api/payload/generate` | Generate implant payload. Body: `{"os","arch","format","lhost","lport","amsi","unhook","encoder"}` |
 
-#### Phantom (Browser Mesh)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/phantom/status` | Get phantom mesh status |
-| `GET` | `/api/phantom/nodes` | List phantom browser nodes |
-| `POST` | `/api/phantom/:action` | Execute phantom action (inject, steal, etc.) |
-
 #### Config
 
 | Method | Path | Description |
@@ -145,7 +137,14 @@ rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse)
 
 | Group | Handlers | File |
 |-------|----------|------|
-| `phase_1_4` | byovd_loader, dkom, amsi_patch, etw_patch, syscall_proxy, hollowing, unhook_ntdll, evasion_misc, otp, sandbox_detect, network_covert, persist_scheduled, persist_wmi, persist_registry, stego_config, x25519_wireguard, quic_tunnel, webrtc_p2p, beacon_dns, beacon_https, beacon_smb, obfuscate_code, packer_upx, crypter_xor, embed_payload, rsrc_hide, connect_back, bind_shell, pivot_socks5, relaying, ai_target, ai_phishing, ai_deepfake, ai_vishing, c2_waterfall, c2_cloudfront | `phase_1_4.py` |
+| `attacks` | responder, webscan, cloud, cleanup, obfuscate | `attacks.py` |
+| `cred_dump` | dump | `cred_dump.py` |
+| `bloodhound` | collect | `bloodhound.py` |
+| `reporting` | attack_layer (MITRE ATT&CK Navigator) | `attack_navigator.py` |
+
+Inline modules (via `ModuleRegistry`): recon, ai_analyze, privesc, persist,
+worm, blue, evasion, report, exfil, health — stubs report zero results
+honestly instead of fake success.
 
 ### Calling a Handler
 

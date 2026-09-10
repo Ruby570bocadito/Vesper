@@ -138,9 +138,19 @@ func TestSearchModules(t *testing.T) {
 	cfg := config.Default()
 	s, _ := New(cfg)
 
-	results := s.SearchModules("ransomware")
+	// Real capabilities must be findable.
+	results := s.SearchModules("recon")
 	if len(results) == 0 {
-		t.Error("SearchModules('ransomware') returned empty — expected at least one module")
+		t.Error("SearchModules('recon') returned empty — expected at least one module")
+	}
+
+	// Regression guard for the honesty purge: the fictional catalog
+	// (ransomware/*, blockz/*, hydra/*) must stay gone.
+	if got := s.SearchModules("ransomware"); len(got) != 0 {
+		t.Errorf("SearchModules('ransomware') returned %d modules — fictional catalog is back", len(got))
+	}
+	if got := s.SearchModules("deepfake"); len(got) != 0 {
+		t.Errorf("SearchModules('deepfake') returned %d modules — fictional catalog is back", len(got))
 	}
 }
 

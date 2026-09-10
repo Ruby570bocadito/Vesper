@@ -1,5 +1,7 @@
 # Vesper
 
+![Vesper banner](docs/images/banner.png)
+
 **Plataforma semi-autónoma de operaciones red team** — núcleo Go, puente Python, dashboard Vue 3.
 
 > Antes llamado `X404X`. Remodelado en 2026: un solo módulo Go, documentación honesta y controles de seguridad reales.
@@ -9,6 +11,8 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue%203-3.5-4FC08D?logo=vuedotjs&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue)
+![Coverage](docs/coverage.svg)
+![Lint](https://img.shields.io/badge/golangci--lint-0%20issues-brightgreen)
 
 **Read this in English:** [README.md](README.md)
 

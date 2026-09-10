@@ -253,37 +253,11 @@ vesper ai model set llama3.2
 
 ## Lateral — Movimiento Lateral
 
-| Comando | Sintaxis | Descripción |
-|---------|----------|-------------|
-| `lateral scan` | `vesper lateral scan --subnet <cidr>` | Descubre hosts alcanzables desde posición actual |
-| `lateral propagate` | `vesper lateral propagate --subnet <cidr> --method <m>` | Propaga agente a hosts adyacentes |
-| `lateral relay` | `vesper lateral relay [--add <ip:port>] [--chain]` | Configura cadena de relays |
+> **No implementado.** Los comandos `lateral scan|propagate|relay` se
+> eliminaron en la remodelación Vesper: llamaban a handlers del bridge que no
+> existen y reportaban propagaciones fingidas. El movimiento lateral real
+> llega con el lab vulnerable de v1.2 (ver `ROADMAP.md`).
 
-### Flags de `lateral propagate`
-
-| Flag | Requerido | Valores | Descripción |
-|------|-----------|---------|-------------|
-| `--subnet` | Sí | CIDR | Subred para propagación |
-| `--method` / `-m` | Sí | `smb`, `ssh`, `wmi`, `psexec`, `rdp` | Método de propagación |
-| `--target` | No | IP | Host específico (en lugar de toda la subred) |
-| `--creds` | No | `user:pass` | Credenciales a utilizar |
-| `--stealth` | No | Boolean | Propagación sigilosa (más lenta) |
-
-### Ejemplos
-
-```bash
-# Escanear subred para movimiento lateral
-vesper lateral scan --subnet 10.0.0.0/24
-
-# Propagar via SMB
-vesper lateral propagate --subnet 10.0.0.0/24 --method smb
-
-# Propagar via SSH a host específico
-vesper lateral propagate --target 10.0.0.15 --method ssh --creds root:toor
-
-# Crear cadena de relay
-vesper lateral relay --add 10.0.0.5:4444 --chain
-```
 
 ---
 
@@ -519,92 +493,40 @@ vesper lab down
 
 ## Deploy — Despliegue de Módulos
 
-| Comando | Sintaxis | Descripción |
-|---------|----------|-------------|
-| `deploy` | `vesper deploy <victim> [modules...] --strategy <s>` | Despliega módulos en víctima |
+> **Eliminado.** `vesper deploy` "desplegaba" módulos ficticios añadiendo
+> strings a un mapa en memoria y su ayuda aún mencionaba ransomware. La vía
+> real de ejecución es la consola (`use <module>` → `run`, requiere bridge) o
+> el dispatcher de campañas.
 
-### Flags
-
-| Flag | Requerido | Valores | Descripción |
-|------|-----------|---------|-------------|
-| `<victim>` | Sí | ID de agente | Víctima objetivo |
-| `[modules...]` | Sí | Lista CSV | Módulos a desplegar |
-| `--strategy` / `-s` | Sí | `stealth`, `targeted`, `scorched_earth` | Estrategia de despliegue |
-| `--delay` | No | Duración | Retraso entre módulos |
-| `--confirm` | No | Boolean | Confirmar antes de ejecutar |
-
-### Estrategias
-
-| Estrategia | Descripción |
-|------------|-------------|
-| `stealth` | Ejecución lenta, mínima huella, prioriza evasión |
-| `targeted` | Balance entre velocidad y sigilo, módulos selectivos |
-| `scorched_earth` | Ejecución inmediata de todos los módulos, máximo daño |
-
-### Ejemplos
-
-```bash
-
-# Desplegar con confirmación
-```
 
 ---
 
 ## Modules — Catálogo de Módulos
 
-| Comando | Sintaxis | Descripción |
-|---------|----------|-------------|
-| `modules list` | `vesper modules list [category]` | Lista módulos (opcionalmente por categoría) |
-| `modules categories` | `vesper modules categories` | Lista categorías disponibles |
-| `modules info` | `vesper modules info <module>` | Información detallada de un módulo |
-
-### Categorías
-
-| Categoría | Cantidad | Descripción |
-|-----------|----------|-------------|
-| `exploit` | 16 | Exploits y escalación de privilegios |
-| `auxiliary` | 3 | Escáneres y herramientas auxiliares |
-| `post` | 2 | Post-explotación y persistencia |
-| `v27` | 10 | Control total + Phishing |
-| `v28` | 24 | Arsenal Ultimate |
-| `v29` | 27 | Destrucción hardware + Stealth |
-| `v3` | 5 | Orchestrator v3 + Platform Core |
-| `omega` | 7 | Omega — Ataques de persistencia extrema |
-
-### Ejemplos
+Los comandos cobra `modules list|categories` se eliminaron: servían un
+catálogo de ~180 módulos ficticios. El catálogo honesto vive ahora en
+`internal/appstate` y se consulta:
 
 ```bash
-# Listar todos los módulos
-vesper modules list
-
-# Listar categorías
-vesper modules categories
-
-# Info de módulo específico
+# En la consola interactiva
+vesper > search recon
+vesper > info bloodhound/collect
+vesper > use cred_dump/dump
 ```
+
+Véase `docs/USAGE.md` §7 para el inventario real (10 módulos inline + 4
+grupos de handlers + operaciones nativas Go).
+
 
 ---
 
 ## Victims — Gestión de Víctimas
 
-| Comando | Sintaxis | Descripción |
-|---------|----------|-------------|
-| `victims list` | `vesper victims list` | Lista víctimas registradas |
+> **Eliminado.** `vesper victims list` consultaba un `DeploymentManager`
+> teatral cuyas víctimas solo existían en memoria y jamás se registraban.
+> Las sesiones de agentes reales se listan con `vesper agent list` o
+> `sessions` en la consola.
 
-### Ejemplo
-
-```bash
-vesper victims list
-```
-
-Salida:
-
-```
-  ID          Hostname        OS              IP              Status      Modules
-  victim01    DESKTOP-ABC     Windows 10      10.0.0.15       active      3
-  victim02    srv-web-01      Ubuntu 22.04    10.0.0.22       active      1
-  victim03    dc01            Windows Server  10.0.0.1        dormant     5
-```
 
 ---
 
@@ -612,16 +534,14 @@ Salida:
 
 | Comando | Sintaxis | Descripción |
 |---------|----------|-------------|
-| `c2 listen` | `vesper c2 listen` | Inicia servidor C2 en modo listen-only |
+| `listeners add` | `vesper listeners add --type tcp --port 8443` | Añade y bindea un listener real |
+| `listeners list` | `vesper listeners list` | Lista listeners activos |
+| `listeners start/stop/remove` | `vesper listeners <op> <id>` | Gestión de listeners |
 
-### Ejemplo
+> `vesper c2 listen` (bindeo directo `:8443` sin geofence) se eliminó. El C2
+> completo arranca con `vesper --dashboard`; los listeners puntuales con
+> `vesper listeners`.
 
-```bash
-# Iniciar C2 en modo escucha
-vesper c2 listen
-```
-
-Inicia el servidor gRPC en el puerto configurado (`server.grpc_port: 8444`) y acepta conexiones de agentes sin iniciar campañas.
 
 ---
 
@@ -712,11 +632,6 @@ vesper help campaign
 | `vesper lab down` | Detener lab |
 | `vesper lab status` | Estado lab |
 | `vesper lab scenario [list\|load]` | Escenarios |
-| `vesper deploy <victim> [modules] --strategy <s>` | Desplegar módulos |
-| `vesper modules list [category]` | Listar módulos |
-| `vesper modules categories` | Categorías |
-| `vesper victims list` | Listar víctimas |
-| `vesper c2 listen` | Servidor C2 |
 | `vesper console` | Shell interactiva |
 | `vesper version` | Versión |
 | `vesper help` | Ayuda |
@@ -776,11 +691,6 @@ La siguiente tabla indica qué comandos están **completamente funcionales** y c
 | `vesper lab down` | **FUNCIONAL** | docker compose down |
 | `vesper lab status` | **FUNCIONAL** | docker compose ps |
 | `vesper lab scenario` | PARCIAL | Solo `ctf_basic` y `full_chain` disponibles |
-| `vesper deploy` | **FUNCIONAL** | Dispatch a agentes via gRPC |
-| `vesper modules list` | **FUNCIONAL** | Registry dinámico |
-| `vesper modules categories` | **FUNCIONAL** | Categorías del registry |
-| `vesper victims list` | **FUNCIONAL** | Query DB de víctimas |
-| `vesper c2 listen` | **FUNCIONAL** | gRPC server standalone |
 | `vesper console` | **FUNCIONAL** | REPL con readline + autocompletado |
 | `vesper version` | **FUNCIONAL** | Build info embebida |
 | `vesper help` | **FUNCIONAL** | Cobra help system |
