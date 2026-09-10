@@ -5,7 +5,9 @@ package orchestrator
 
 import (
 	"context"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/ruby570bocadito/vesper/pkg/shared/config"
 	"github.com/ruby570bocadito/vesper/pkg/shared/types"
@@ -113,19 +115,36 @@ func TestKillChainPhaseAdvance(t *testing.T) {
 
 func TestEventBusWildcard(t *testing.T) {
 	eb := NewEventBus()
+
+	var mu sync.Mutex
 	received := 0
+	var wg sync.WaitGroup
+	wg.Add(3) // one per published event
 
 	eb.Subscribe(EventWildcard, func(event Event) {
+		defer wg.Done()
+		mu.Lock()
 		received++
+		mu.Unlock()
 	})
 
 	eb.Publish(Event{Type: EventCampaignStarted, CampaignID: "test"})
 	eb.Publish(Event{Type: EventAgentCheckin, AgentID: "agent1"})
 	eb.Publish(Event{Type: EventExploitSuccess, CampaignID: "test"})
 
-	// Note: event handlers run in goroutines, need small wait
-	if received > 0 {
-		t.Logf("received %d events via wildcard", received)
+	// handlers run in goroutines — wait (bounded) for all three deliveries
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for wildcard handlers")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if received != 3 {
+		t.Fatalf("received %d events via wildcard, want 3", received)
 	}
 }
 
