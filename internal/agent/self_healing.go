@@ -14,13 +14,14 @@ import (
 )
 
 type Watchdog struct {
-	agent       *Agent
-	heartbeatCh chan struct{}
-	stopCh      chan struct{}
-	mu          sync.RWMutex
-	lastBeat    time.Time
-	persistIdx  int
-	backupPaths []string
+	noPersistence bool
+	agent         *Agent
+	heartbeatCh   chan struct{}
+	stopCh        chan struct{}
+	mu            sync.RWMutex
+	lastBeat      time.Time
+	persistIdx    int
+	backupPaths   []string
 }
 
 func NewWatchdog(a *Agent) *Watchdog {
@@ -42,6 +43,10 @@ func (w *Watchdog) Heartbeat() {
 }
 
 func (w *Watchdog) Start(ctx context.Context) error {
+	if !persistenceAllowed(w.noPersistence) {
+		fmt.Printf("[watchdog] resilience installs blocked by safety gate (VESPER_LAB_ONLY/no_persistence)\n")
+		return nil
+	}
 	w.mu.Lock()
 	w.lastBeat = time.Now()
 

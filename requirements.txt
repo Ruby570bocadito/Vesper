@@ -6,7 +6,7 @@
 
 # Bridge gRPC transport (modules/bridge/bridge_grpc.py)
 grpcio>=1.64.0
-protobuf>=5.26.0
+protobuf>=6.33.0
 
 # Testing (modules/bridge/tests)
 pytest>=8.0

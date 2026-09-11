@@ -8,7 +8,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/ruby570bocadito/vesper/internal/agent"
@@ -19,6 +21,10 @@ import (
 // ConsoleOut is the global output writer for all CLI operations (allows WebSocket redirection)
 var ConsoleOut io.Writer = os.Stdout
 
+// ErrOut is where errors go (stderr by default; the web terminal redirects
+// it into the shared console buffer so browser users see errors too).
+var ErrOut io.Writer = os.Stderr
+
 // ─── Console types ────────────────────────────────────────────────────────────
 
 type Console struct {
@@ -27,6 +33,7 @@ type Console struct {
 	running    bool
 	ctx        *ModuleContext
 	hideBanner bool
+	workspace  string // session-local workspace label
 }
 
 type ModuleContext struct {
@@ -54,10 +61,28 @@ func (c *Console) Run() error {
 	}
 	c.running = true
 
+	// Ctrl+C exits the interactive console cleanly (the web terminal
+	// console skips this — the dashboard process owns its own signals).
+	if !c.hideBanner {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+		go func() {
+			if _, ok := <-sigCh; ok {
+				c.running = false
+				fmt.Fprint(os.Stderr, "\n")
+			}
+		}()
+	}
+
 	for c.running {
 		c.PrintPrompt()
 		input, err := c.reader.ReadString('\n')
 		if err != nil {
+			// EOF with a trailing partial line still executes it
+			if trimmed := strings.TrimSpace(input); trimmed != "" {
+				parts := strings.Fields(trimmed)
+				c.dispatch(strings.ToLower(parts[0]), parts[1:])
+			}
 			break
 		}
 		input = strings.TrimSpace(input)
@@ -101,11 +126,10 @@ func (c *Console) printBanner() {
 		`  Type %shelp%s for a list of commands.
   Use %suse <module>%s to load an exploit or auxiliary module.
   Use %ssuggest%s to get AI-powered attack recommendations.
-  %s[Tab] complete  [↑↓] history  [Ctrl+C] exit%s`,
+  [Ctrl+C] or exit quits the console`,
 		cSuccess, ansiR,
 		cSuccess, ansiR,
 		cSuccess, ansiR,
-		cMuted, ansiR,
 	))
 	fmt.Fprintln(ConsoleOut)
 
@@ -142,7 +166,7 @@ func (c *Console) dispatch(cmd string, args []string) {
 	case "exit", "quit", "q":
 		c.running = false
 	case "version":
-		fmt.Fprintf(ConsoleOut, "  Vesper v1.0.0  Go %s  %s%s\n", runtime.Version()[2:], cMuted, ansiR)
+		fmt.Fprintf(ConsoleOut, "  Vesper v%s  Go %s  %s%s\n", version, runtime.Version()[2:], cMuted, ansiR)
 	case "clear", "cls":
 		fmt.Fprint(ConsoleOut, "\033[H\033[2J")
 
@@ -185,6 +209,8 @@ func (c *Console) dispatch(cmd string, args []string) {
 		c.cmdAccept(args)
 	case "reject":
 		c.cmdReject(args)
+	case "auto":
+		c.cmdAutoMode(args)
 
 	// Data
 	case "hosts":
@@ -228,13 +254,12 @@ func (c *Console) cmdHelp() {
 		commands [][2]string
 	}{
 		{"CAMPAIGN", [][2]string{
-			{"campaign [start|list|status|pause|resume]", "Manage red team operations"},
+			{"campaign [start|list|pause|resume]", "Manage red team operations"},
 			{"killchain", "Visual kill chain progress"},
-			{"workspace [name]", "Switch working context"},
+			{"workspace [name]", "Session-local workspace label"},
 		}},
 		{"SESSIONS & AGENTS", [][2]string{
-			{"sessions [-i <id>]", "List or interact with sessions"},
-			{"session -i <id>", "Open session shell"},
+			{"sessions [-i <id>]", "List sessions (-i shows session info)"},
 		}},
 		{"MODULES", [][2]string{
 			{"use <module>", "Load an exploit / auxiliary module"},
@@ -254,8 +279,9 @@ func (c *Console) cmdHelp() {
 		{"AI ENGINE", [][2]string{
 			{"suggest", "Get ranked attack recommendations"},
 			{"ai <prompt>", "Query AI assistant"},
-			{"accept <#>", "Execute AI recommendation"},
-			{"reject <#>", "Dismiss AI recommendation"},
+			{"auto [on|off]", "Toggle autonomous execution"},
+			{"accept <#|id>", "Approve an AI recommendation"},
+			{"reject <#|id>", "Dismiss an AI recommendation"},
 		}},
 		{"OPERATIONS", [][2]string{
 			{"builder [options]", "Generate implant payloads"},
@@ -356,7 +382,7 @@ func (c *Console) cmdSessions(args []string) {
 					cInfo, ansiR, cCyan+a.LocalIP+ansiR,
 					cInfo, ansiR, statusTag(string(a.Status)),
 				))
-				fmt.Fprintf(ConsoleOut, "  %s[*]%s Use %sback%s to return.\n", cMuted, ansiR, cSuccess, ansiR)
+				fmt.Fprintf(ConsoleOut, "  %s[i]%s Interactive shells are not implemented yet — this is read-only session info.\n", cInfo, ansiR)
 				return
 			}
 		}
@@ -652,6 +678,35 @@ func (c *Console) cmdSuggest(args []string) {
 	tbl.render()
 	fmt.Fprintf(ConsoleOut, "\n  %s[*]%s Use %saccept <#>%s or %sreject <#>%s to act.\n", cMuted, ansiR, cSuccess, ansiR, cDanger, ansiR)
 }
+func (c *Console) cmdAutoMode(args []string) {
+	state := c.state
+	if state == nil || state.Auto == nil {
+		printErr("AutoMode requires initialized state.")
+		return
+	}
+	sub := ""
+	if len(args) > 0 {
+		sub = args[0]
+	}
+	switch sub {
+	case "on":
+		if !state.Auto.IsEnabled() {
+			state.Auto.Toggle()
+		}
+		printOK("AutoMode %sENABLED%s — decisions above %.2f confidence execute automatically.", cSuccess+ansiB, ansiR, state.Cfg.AI.MinConfidence)
+	case "off":
+		if state.Auto.IsEnabled() {
+			state.Auto.Stop()
+		}
+		printWarn("AutoMode %sDISABLED%s — manual approval required.", ansiB, ansiR)
+	default:
+		status := cDanger + "disabled" + ansiR
+		if state.Auto.IsEnabled() {
+			status = cSuccess + "enabled" + ansiR
+		}
+		printInfo("AutoMode is %s — use %sauto on%s / %sauto off%s.", status, cSuccess, ansiR, cDanger, ansiR)
+	}
+}
 
 func (c *Console) cmdAI(args []string) {
 	if len(args) == 0 {
@@ -678,39 +733,58 @@ func (c *Console) cmdAI(args []string) {
 }
 
 func (c *Console) cmdAccept(args []string) {
-	if c.state == nil || c.state.Orchestrator == nil {
-		printInfo("No active campaign. Start a campaign first with 'campaign start'.")
+	decisionID, ok := c.resolveDecisionArg(args, "accept")
+	if !ok {
 		return
 	}
-	if len(args) < 1 {
-		printInfo("Usage: accept <decision-id>")
-		return
-	}
-	decisionID := args[0]
-	err := c.state.Orchestrator.ApproveDecision(decisionID)
-	if err != nil {
+	if err := c.state.Orchestrator.ApproveDecision(decisionID); err != nil {
 		printErr("Approve failed: %v", err)
 		return
 	}
-	printOK("Decision %s approved — executing.", decisionID)
+	// honest: approval marks the decision reviewed; execution happens
+	// through AutoMode or manual module runs, not by this command
+	printOK("Decision %s%s%s approved (marked as reviewed).", cWhite+ansiB, decisionID, ansiR)
+	printInfo("AutoMode executes approved decisions when enabled (ai auto on).")
+}
+
+// resolveDecisionArg maps a suggestion row number (from the last
+// `suggest` output) or a literal decision ID to the real ID.
+func (c *Console) resolveDecisionArg(args []string, verb string) (string, bool) {
+	if c.state == nil || c.state.Orchestrator == nil {
+		printInfo("No active campaign. Start a campaign first with 'campaign start'.")
+		return "", false
+	}
+	if len(args) < 1 {
+		printInfo("Usage: %s <#|decision-id>", verb)
+		return "", false
+	}
+	arg := args[0]
+	if n, err := strconv.Atoi(arg); err == nil {
+		camps := c.state.Orchestrator.ListCampaigns()
+		if len(camps) == 0 {
+			printErr("No campaigns — run %scampaign start%s first.", cSuccess, ansiR)
+			return "", false
+		}
+		decisions := c.state.Orchestrator.GetDecisions(camps[0].ID)
+		if n < 1 || n > len(decisions) {
+			printErr("Row %d out of range — run %ssuggest%s to refresh the list.", n, cSuccess, ansiR)
+			return "", false
+		}
+		return decisions[n-1].ID, true
+	}
+	return arg, true
 }
 
 func (c *Console) cmdReject(args []string) {
-	if c.state == nil || c.state.Orchestrator == nil {
-		printInfo("No active campaign. Start a campaign first with 'campaign start'.")
+	decisionID, ok := c.resolveDecisionArg(args, "reject")
+	if !ok {
 		return
 	}
-	if len(args) < 1 {
-		printInfo("Usage: reject <decision-id>")
-		return
-	}
-	decisionID := args[0]
-	err := c.state.Orchestrator.RejectDecision(decisionID)
-	if err != nil {
+	if err := c.state.Orchestrator.RejectDecision(decisionID); err != nil {
 		printErr("Reject failed: %v", err)
 		return
 	}
-	printOK("Decision %s rejected.", decisionID)
+	printOK("Decision %s%s%s rejected.", cWhite+ansiB, decisionID, ansiR)
 }
 
 // ─── Data views ───────────────────────────────────────────────────────────────
@@ -849,7 +923,7 @@ func (c *Console) cmdKillChain(args []string) {
 	}
 	for _, cam := range camps {
 		phases := []string{"Recon", "Weaponization", "Delivery", "Exploitation", "Installation", "C2", "Objectives"}
-		curOrder := cam.Phase.Order()
+		curOrder := cam.Phase.Order() - 1 // Order() is 1-based
 
 		fmt.Fprintf(ConsoleOut, "\n  %s%s%s  %s%s%s  phase=%s  agents=%d\n",
 			cWhite+ansiB, cam.Name, ansiR,
@@ -876,50 +950,30 @@ func (c *Console) cmdKillChain(args []string) {
 // ─── Misc commands ────────────────────────────────────────────────────────────
 
 func (c *Console) cmdWorkspace(args []string) {
+	if c.workspace == "" {
+		c.workspace = "default"
+	}
 	if len(args) == 0 {
-		printInfo("Current workspace: %sdefault%s", cWhite+ansiB, ansiR)
+		printInfo("Current workspace: %s%s%s", cWhite+ansiB, c.workspace, ansiR)
 		return
 	}
-	printOK("Workspace: %s%s%s", cWhite+ansiB, args[0], ansiR)
+	c.workspace = args[0]
+	printOK("Workspace: %s%s%s (session-local label)", cWhite+ansiB, c.workspace, ansiR)
 }
 
 func (c *Console) cmdListeners(args []string) {
+	// delegates to the REAL listener manager (accept loops, live state)
+	lc := listenersCmd()
 	if len(args) == 0 {
-		printSection("LISTENERS")
-		tbl := newTable("#", "Type", "Bind", "Status", "Protocol")
-		tbl.addRow("1", cInfo+"TCP"+ansiR, "0.0.0.0:8443", statusTag("active"), "gRPC+XChaCha20")
-		tbl.render()
-		fmt.Fprintf(ConsoleOut, "\n  %sAdd:%s listeners add --type tcp --port 8443\n", cMuted, ansiR)
-		return
+		args = []string{"list"}
 	}
-	switch args[0] {
-	case "add":
-		ltype, port := "tcp", "8443"
-		for i, a := range args {
-			if a == "--type" && i+1 < len(args) {
-				ltype = args[i+1]
-			}
-			if a == "--port" && i+1 < len(args) {
-				port = args[i+1]
-			}
-		}
-		printOK("Listener added: %s%s 0.0.0.0:%s%s (gRPC+XChaCha20)", cInfo+ansiB, ltype, port, ansiR)
-	case "list":
-		c.cmdListeners(nil)
-	}
+	lc.SetArgs(args)
+	_ = lc.Execute()
 }
 
 func (c *Console) cmdWebhook(args []string) {
-	if len(args) == 0 {
-		printInfo("Webhook notifications: disabled.")
-		return
-	}
-	switch args[0] {
-	case "on", "enable":
-		printOK("Webhook notifications ENABLED — configure in config.yaml")
-	case "off", "disable":
-		printWarn("Webhook notifications DISABLED.")
-	}
+	printInfo("Webhooks are configured in config.yaml (notifications section).")
+	printInfo("The console toggle is not implemented — nothing was changed.")
 }
 
 func (c *Console) cmdBuilder(args []string) {

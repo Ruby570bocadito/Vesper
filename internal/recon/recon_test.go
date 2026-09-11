@@ -77,3 +77,76 @@ func indexOf(s, sub string) int {
 	}
 	return -1
 }
+
+func TestExpandTargetsCIDR(t *testing.T) {
+	got, err := ExpandTargets("192.168.10.0/30")
+	if err != nil {
+		t.Fatalf("ExpandTargets: %v", err)
+	}
+	want := []string{"192.168.10.0", "192.168.10.1", "192.168.10.2", "192.168.10.3"}
+	if len(got) != len(want) {
+		t.Fatalf("got %d hosts, want %d: %v", len(got), len(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("host[%d] = %s, want %s", i, got[i], want[i])
+		}
+	}
+}
+
+func TestExpandTargetsSingleIPAndList(t *testing.T) {
+	got, err := ExpandTargets("127.0.0.1, 127.0.0.2")
+	if err != nil {
+		t.Fatalf("ExpandTargets: %v", err)
+	}
+	if len(got) != 2 || got[0] != "127.0.0.1" || got[1] != "127.0.0.2" {
+		t.Fatalf("unexpected expansion: %v", got)
+	}
+}
+
+func TestExpandTargetsRejectsInvalid(t *testing.T) {
+	if _, err := ExpandTargets(""); err == nil {
+		t.Fatal("empty target should error")
+	}
+	if _, err := ExpandTargets("not-a-host-or-cidr"); err == nil {
+		t.Fatal("garbage target should error")
+	}
+	if _, err := ExpandTargets("10.0.0.0/64"); err == nil {
+		t.Fatal("invalid CIDR should error")
+	}
+}
+
+func TestExpandTargetsCapsSweep(t *testing.T) {
+	// /16 would be 65k hosts — must cap at MaxScanHosts
+	got, err := ExpandTargets("10.1.0.0/16")
+	if err != nil {
+		t.Fatalf("ExpandTargets: %v", err)
+	}
+	if len(got) != MaxScanHosts {
+		t.Fatalf("cap: got %d hosts, want %d", len(got), MaxScanHosts)
+	}
+}
+
+func TestScanTargetsSweepsMultipleHosts(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer ln.Close()
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			conn.Close()
+		}
+	}()
+	port := ln.Addr().(*net.TCPAddr).Port
+
+	res := ScanTargets(context.Background(), []string{"127.0.0.1"},
+		[]int{port}, 500*time.Millisecond, false)
+	if len(res) != 1 || len(res["127.0.0.1"]) != 1 || !res["127.0.0.1"][0].Open {
+		t.Fatalf("ScanTargets result: %#v", res)
+	}
+}

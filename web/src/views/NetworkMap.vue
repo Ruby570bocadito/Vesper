@@ -26,7 +26,7 @@
         </div>
         <div class="text-gray-600 text-[10px]">{{ h.hostname || '?' }} · {{ h.os || '?' }}</div>
         <div v-if="hostVulns(h).length" class="mt-1 flex flex-wrap gap-1">
-          <span v-for="v in hostVulns(h).slice(0, 3)" :key="v.cve_id || v.id"
+          <span v-for="v in hostVulns(h).slice(0, 3)" :key="v.cve || v.id"
             class="text-[9px] px-1 rounded" :class="sevClass(v.severity)">
             {{ v.cve_id || 'CVE' }}
           </span>
@@ -75,7 +75,7 @@ onMounted(() => {
 
 function hostVulns(h) {
   return (reconStore.vulnerabilities || []).filter(v =>
-    v.host === h.ip || v.target === h.ip || v.ip === h.ip
+    v.target_ip === h.ip
   )
 }
 function hostAgents(h) {
@@ -110,10 +110,9 @@ function drawGraph() {
     assetValue: h.asset_value || 0,
   }))
 
+  // real topology only: no invented chain links — hosts stand alone
+  // until lateral-movement edges exist in the world graph
   const linksData = []
-  for (let i = 0; i < nodesData.length - 1; i++) {
-    linksData.push({ source: nodesData[i].id, target: nodesData[i + 1].id })
-  }
 
   simulation = d3.forceSimulation(nodesData)
     .force('link', d3.forceLink(linksData).id(d => d.id).distance(100))

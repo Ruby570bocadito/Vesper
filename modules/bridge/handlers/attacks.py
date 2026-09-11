@@ -192,12 +192,16 @@ def run_webscan(params: dict) -> dict:
                 req = urllib.request.Request(test_url, headers={"User-Agent": "Mozilla/5.0"})
                 resp = urllib.request.urlopen(req, timeout=3)
                 content = resp.read().decode(errors="ignore").lower()
-                if any(e in content for e in ["sql", "syntax", "mysql", "postgresql",
-                                               "ora-", "odbc", "sqlite"]):
+                hits = [e for e in ["sql", "syntax", "mysql", "postgresql",
+                                    "ora-", "odbc", "sqlite"] if e in content]
+                if hits:
+                    # keyword hit != confirmed injection; report the
+                    # indicator honestly for manual verification
                     vulns.append({
-                        "type": "SQLi", "parameter": "id", "payload": payload,
-                        "severity": "high", "confidence": 0.85,
-                        "endpoint": url,
+                        "type": "SQLi_keyword_indicator", "parameter": "id",
+                        "payload": payload, "severity": "info",
+                        "confidence": 0.3,
+                        "keywords": hits, "endpoint": url,
                     })
                     break
             except Exception:
@@ -284,18 +288,29 @@ def _attack_aws(action: str) -> dict:
     results = {"findings": [], "credentials": []}
     try:
         if action == "imds":
-            # Try to reach IMDSv1 (169.254.169.254)
+            # Probe IMDSv1 (169.254.169.254). Credentials are only
+            # reported when the role document is ACTUALLY retrieved —
+            # a reachable role name alone is not a credential.
             import urllib.request
             req = urllib.request.Request("http://169.254.169.254/latest/meta-data/iam/security-credentials/")
             resp = urllib.request.urlopen(req, timeout=2)
             role = resp.read().decode().strip()
-            req2 = urllib.request.Request(f"http://169.254.169.254/latest/meta-data/iam/security-credentials/{role}")
-            urllib.request.urlopen(req2, timeout=2)
-            results["findings"].append({"type": "imds_v1_accessible", "role": role})
-            results["credentials"].append({"type": "aws_temp_creds", "role": role})
+            if role:
+                results["findings"].append({"type": "imds_v1_accessible", "role": role})
+                req2 = urllib.request.Request(
+                    f"http://169.254.169.254/latest/meta-data/iam/security-credentials/{role}")
+                resp2 = urllib.request.urlopen(req2, timeout=2)
+                doc = resp2.read().decode()
+                if '"AccessKeyId"' in doc:
+                    # never return the secret itself — flag its existence
+                    results["credentials"].append({
+                        "type": "aws_temp_creds", "role": role,
+                        "note": "credential document retrieved; secret withheld",
+                    })
         else:
-            # S3 bucket enumeration
-            results["findings"].append({"type": "s3_public", "bucket": "example-bucket", "region": "us-east-1"})
+            # no S3 enumeration implemented — say so instead of
+            # inventing an "example-bucket" finding
+            results["error"] = f"cloud attack action {action!r} not implemented (imds is the only one)"
     except Exception as e:
         results["findings"].append({"type": "imds_blocked", "detail": str(e)})
     return results

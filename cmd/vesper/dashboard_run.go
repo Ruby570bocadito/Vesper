@@ -61,8 +61,9 @@ func startDashboard(cfg *config.Config) error {
 	apiServer.SetPort(port)
 	apiServer.ServeStatic("web/dist")
 
-	// Single shared WebSocket terminal (one Console for all browser tabs)
-	apiServer.Mux().HandleFunc("/ws/terminal", handleTerminalWS(state))
+	// Single shared WebSocket terminal (one Console for all browser tabs).
+	// Gated by dashboard.auth_token when one is configured.
+	apiServer.Mux().HandleFunc("/ws/terminal", handleTerminalWS(state, cfg.Dashboard.AuthToken))
 
 	// ── Signal handler ───────────────────────────────────────────────────────
 	sigCh := make(chan os.Signal, 1)

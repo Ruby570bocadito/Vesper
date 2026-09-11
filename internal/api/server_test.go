@@ -424,8 +424,12 @@ func TestKillAgent(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("kill: got %d, want 200", resp.StatusCode)
 	}
-	if body := decodeBody(t, resp); body["success"] != true {
-		t.Fatalf("kill success flag: %v", body)
+	body := decodeBody(t, resp)
+	if body["status"] != "deregistered" {
+		t.Fatalf("kill status: %v (honest response: deregistered, not fake kill)", body)
+	}
+	if body["note"] == "" {
+		t.Fatal("kill response must include the honest 'no command channel' note")
 	}
 
 	if _, ok := srv.agents["victim"]; ok {

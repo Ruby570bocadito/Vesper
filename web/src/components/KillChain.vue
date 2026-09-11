@@ -36,7 +36,7 @@ onMounted(() => {
   if (!eventStore.connected) eventStore.connect()
   wsUnsub = setInterval(() => {
     const phaseEvents = eventStore.events.filter(e =>
-      e.type === 'phase_change' || e.type === 'phase'
+      e.type === 'phase.changed' || e.type === 'campaign.started'
     )
     if (phaseEvents.length) {
       lastEvent.value = phaseEvents[0].description || phaseEvents[0].phase || ''

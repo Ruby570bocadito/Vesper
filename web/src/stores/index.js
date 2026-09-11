@@ -246,8 +246,12 @@ export const useEventStore = defineStore('events', () => {
   const events = ref([])
   const ws = ref(null)
   const connected = ref(false)
+  const retries = ref(0)
+  const reconnectTimer = ref(null)
+  const manuallyClosed = ref(false)
 
   function connect(campaignId = null) {
+    manuallyClosed.value = false
     if (ws.value) return
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
     const url = campaignId
@@ -255,8 +259,21 @@ export const useEventStore = defineStore('events', () => {
       : `${protocol}://${location.host}/ws`
 
     ws.value = new WebSocket(url)
-    ws.value.onopen = () => { connected.value = true }
-    ws.value.onclose = () => { connected.value = false; ws.value = null }
+    ws.value.onopen = () => {
+      connected.value = true
+      retries.value = 0
+    }
+    ws.value.onclose = () => {
+      connected.value = false
+      ws.value = null
+      // reconnect with capped backoff — without this a single drop
+      // (backend restart, network blip) mutes the dashboard forever
+      if (!manuallyClosed.value) {
+        const delay = Math.min(15000, 1000 * 2 ** retries.value)
+        retries.value++
+        reconnectTimer.value = setTimeout(() => connect(campaignId), delay)
+      }
+    }
     ws.value.onerror = () => { connected.value = false }
     ws.value.onmessage = (msg) => {
       try {
@@ -268,6 +285,11 @@ export const useEventStore = defineStore('events', () => {
   }
 
   function disconnect() {
+    manuallyClosed.value = true
+    if (reconnectTimer.value) {
+      clearTimeout(reconnectTimer.value)
+      reconnectTimer.value = null
+    }
     if (ws.value) {
       ws.value.close()
       ws.value = null

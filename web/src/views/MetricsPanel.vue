@@ -31,18 +31,15 @@
         </div>
       </div>
 
-      <!-- Evasion + Exploits row -->
+      <!-- Real counters only — no invented evasion/exploit rates -->
       <div class="grid grid-cols-3 gap-3">
         <div class="glass-panel p-3 text-center">
-          <div class="text-3xl font-mono text-neon">{{ evasionPct }}%</div>
-          <div class="text-xs text-gray-500 mt-1">Evasion Rate</div>
-          <div class="mt-2 h-1 bg-gray-800 rounded">
-            <div class="h-1 rounded bg-neon transition-all" :style="{ width: evasionPct + '%' }"></div>
-          </div>
+          <div class="text-3xl font-mono text-neon">{{ activeAgents }}</div>
+          <div class="text-xs text-gray-500 mt-1">Active Agents</div>
         </div>
         <div class="glass-panel p-3 text-center">
-          <div class="text-3xl font-mono text-purple">{{ kpi.exploits }}</div>
-          <div class="text-xs text-gray-500 mt-1">Successful Exploits</div>
+          <div class="text-3xl font-mono text-purple">{{ kpi.lateral }}</div>
+          <div class="text-xs text-gray-500 mt-1">Lateral Moves</div>
         </div>
         <div class="glass-panel p-3 text-center">
           <div class="text-3xl font-mono" :class="blueAlerts > 0 ? 'text-alert' : 'text-gray-600'">{{ blueAlerts }}</div>
@@ -81,17 +78,15 @@ const rawMetrics = ref({})
 const blueMetrics = ref([])
 
 const kpi = computed(() => ({
-  agents:   rawMetrics.value.total_agents         ?? 0,
-  hosts:    rawMetrics.value.total_hosts          ?? 0,
-  vulns:    rawMetrics.value.total_vulns          ?? 0,
-  creds:    rawMetrics.value.credentials_captured ?? 0,
-  exploits: rawMetrics.value.successful_exploits  ?? 0,
+  agents:  rawMetrics.value.total_agents         ?? 0,
+  hosts:   rawMetrics.value.total_hosts          ?? 0,
+  vulns:   rawMetrics.value.total_vulns          ?? 0,
+  creds:   rawMetrics.value.credentials_captured ?? 0,
+  lateral: rawMetrics.value.lateral_moves        ?? 0,
 }))
 
-const evasionPct = computed(() => {
-  const r = rawMetrics.value.stealth_rating
-  return r != null ? Math.round(r * 100) : 0
-})
+// only real counters — the old "Evasion Rate" was an invented formula
+const activeAgents = computed(() => rawMetrics.value.active_agents ?? 0)
 
 const blueAlerts = computed(() => blueMetrics.value.filter(m => m.detected).length)
 

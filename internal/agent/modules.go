@@ -131,7 +131,10 @@ func directCleanup() int {
 		cleaned += 4
 	} else {
 		// Linux: remove cron, systemd, autostart, shell profiles
-		_ = exec.Command("crontab", "-r").Run()
+		// remove only Vesper entries — crontab -r would wipe the
+		// entire user crontab
+		_ = exec.Command("bash", "-c",
+			"(crontab -l 2>/dev/null | grep -v vesper) | crontab -").Run()
 		cleaned++
 		for _, svc := range []string{"vesper-cored", "system-update-check", "dbus-monitor-d"} {
 			os.Remove("/etc/systemd/system/" + svc + ".service")

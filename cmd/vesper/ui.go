@@ -10,7 +10,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"unicode/utf8"
 )
@@ -80,9 +79,10 @@ func printWarn(format string, args ...interface{}) {
 	fmt.Fprintf(ConsoleOut, "  %s!%s %s\n", cWarn, ansiR, fmt.Sprintf(format, args...))
 }
 
-// printErr writes an error line to stderr.
+// printErr writes an error line to ErrOut (stderr, or the shared
+// console buffer when running behind the web terminal).
 func printErr(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "  %s✗%s %s\n", cDanger, ansiR, fmt.Sprintf(format, args...))
+	fmt.Fprintf(ErrOut, "  %s✗%s %s\n", cDanger, ansiR, fmt.Sprintf(format, args...))
 }
 
 // ─── Block helpers ────────────────────────────────────────────────────────────

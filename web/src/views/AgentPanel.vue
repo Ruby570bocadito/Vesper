@@ -32,7 +32,7 @@
               <td class="py-2 text-neon">{{ agent.id }}</td>
               <td class="text-gray-300">{{ agent.hostname }}</td>
               <td class="text-gray-400">{{ agent.os }}</td>
-              <td :class="agent.user === 'root' || (agent.user && agent.user.includes('SYSTEM')) ? 'text-alert' : 'text-gray-300'">{{ agent.username }}</td>
+              <td :class="agent.username === 'root' || (agent.username && agent.username.includes('SYSTEM')) ? 'text-alert' : 'text-gray-300'">{{ agent.username }}</td>
               <td class="text-gray-400">{{ agent.local_ip }}</td>
               <td>
                 <span class="inline-block w-2 h-2 rounded-full mr-1" :class="statusColor(agent.status)"></span>
@@ -78,7 +78,7 @@
           <div class="p-2 bg-dark rounded">
             <div class="text-gray-600 text-[10px]">Privileges</div>
             <div :class="selectedAgent.user === 'root' || (selectedAgent.user && selectedAgent.user.includes('SYSTEM')) ? 'text-alert' : 'text-gray-300'">
-              {{ selectedAgent.privilege || selectedAgent.user || '?' }}
+              {{ (selectedAgent.privileges && selectedAgent.privileges.length) ? selectedAgent.privileges.join(', ') : '?' }}
             </div>
           </div>
           <div class="p-2 bg-dark rounded">
@@ -92,7 +92,7 @@
         </div>
         <div class="p-2 bg-dark rounded">
           <div class="text-gray-600 text-[10px]">External IP</div>
-          <div class="text-gray-300">{{ selectedAgent.external_ip || selectedAgent.public_ip || '?' }}</div>
+          <div class="text-gray-300">{{ selectedAgent.hostname || '?' }}</div>
         </div>
         <div class="p-2 bg-dark rounded">
           <div class="text-gray-600 text-[10px]">Hostname</div>
@@ -102,18 +102,18 @@
           <div class="text-gray-600 text-[10px]">Domain</div>
           <div class="text-gray-300">{{ selectedAgent.domain || 'WORKGROUP' }}</div>
         </div>
-        <div v-if="selectedAgent.integrity_level" class="p-2 bg-dark rounded">
+        <div v-if="false" class="p-2 bg-dark rounded">
           <div class="text-gray-600 text-[10px]">Integrity</div>
           <div class="text-gray-300">{{ selectedAgent.integrity_level }}</div>
         </div>
-        <div v-if="selectedAgent.last_seen" class="p-2 bg-dark rounded">
+        <div v-if="selectedAgent.last_checkin" class="p-2 bg-dark rounded">
           <div class="text-gray-600 text-[10px]">Last Seen</div>
-          <div class="text-gray-300">{{ new Date(selectedAgent.last_seen).toLocaleString() }}</div>
+          <div class="text-gray-300">{{ new Date(selectedAgent.last_checkin).toLocaleString() }}</div>
         </div>
       </div>
 
       <div class="flex gap-2 pt-1">
-        <button @click="interact(selectedAgent)" class="btn flex-1 text-[10px] py-1">Interactive</button>
+        <button @click="interact(selectedAgent)" class="btn flex-1 text-[10px] py-1" title="Interactive shells land in v1.2" disabled>Interactive (v1.2)</button>
         <button @click="kill(selectedAgent)" class="btn btn-reject flex-1 text-[10px] py-1">Kill</button>
       </div>
     </div>
@@ -142,7 +142,8 @@ const kill = (agent) => {
 }
 
 const interact = (agent) => {
-  fetch(`/api/agents/${agent.id}/interact`, { method: 'POST' }).catch(() => {})
+  // honest: no interactive shell endpoint exists yet; button stays disabled
+  console.warn('interactive shells not implemented (roadmap v1.2)', agent?.id)
 }
 
 const statusColor = (s) => ({ online: 'bg-neon', active: 'bg-yellow-400', idle: 'bg-gray-500', dead: 'bg-alert' }[s] || 'bg-gray-500')

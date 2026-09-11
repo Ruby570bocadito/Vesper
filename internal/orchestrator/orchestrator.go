@@ -156,6 +156,44 @@ func (o *Orchestrator) ListCampaigns() []*types.Campaign {
 	return campaigns
 }
 
+// GetDecisions returns the decisions recorded for a campaign
+// (chronological). Used by the console to resolve suggestion row
+// numbers into real decision IDs.
+func (o *Orchestrator) GetDecisions(campaignID string) []*types.Decision {
+	o.mutex.RLock()
+	defer o.mutex.RUnlock()
+	out := make([]*types.Decision, len(o.decisions[campaignID]))
+	copy(out, o.decisions[campaignID])
+	return out
+}
+
+// PauseCampaign pauses a campaign without exposing the shared pointer
+// for mutation (thread-safe).
+func (o *Orchestrator) PauseCampaign(id string) error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+	c, ok := o.campaigns[id]
+	if !ok {
+		return fmt.Errorf("campaign not found: %s", id)
+	}
+	c.Status = types.CampaignStatusPaused
+	o.log.Infof("campaign paused: %s", id)
+	return nil
+}
+
+// ResumeCampaign resumes a paused campaign (thread-safe).
+func (o *Orchestrator) ResumeCampaign(id string) error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+	c, ok := o.campaigns[id]
+	if !ok {
+		return fmt.Errorf("campaign not found: %s", id)
+	}
+	c.Status = types.CampaignStatusRunning
+	o.log.Infof("campaign resumed: %s", id)
+	return nil
+}
+
 // RegisterAgent registers a new agent with a campaign.
 func (o *Orchestrator) RegisterAgent(agent *types.Agent) error {
 	o.mutex.Lock()

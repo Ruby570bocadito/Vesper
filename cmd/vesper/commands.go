@@ -169,14 +169,21 @@ Each campaign tracks phases, agents, decisions and progress independently.`,
 			if state == nil {
 				return
 			}
+			paused := false
 			for _, cam := range state.Orchestrator.ListCampaigns() {
 				if cam.Status == "running" {
-					cam.Status = "paused"
+					if err := state.Orchestrator.PauseCampaign(cam.ID); err != nil {
+						printErr("Pause failed: %v", err)
+						return
+					}
 					printWarn("Campaign %s%s%s paused at phase %s.", cWhite, cam.Name, ansiR, string(cam.Phase))
-					return
+					paused = true
+					break
 				}
 			}
-			printInfo("No running campaigns to pause.")
+			if !paused {
+				printInfo("No running campaigns to pause.")
+			}
 		},
 	}
 
@@ -188,14 +195,21 @@ Each campaign tracks phases, agents, decisions and progress independently.`,
 			if state == nil {
 				return
 			}
+			resumed := false
 			for _, cam := range state.Orchestrator.ListCampaigns() {
 				if cam.Status == "paused" {
-					cam.Status = "running"
+					if err := state.Orchestrator.ResumeCampaign(cam.ID); err != nil {
+						printErr("Resume failed: %v", err)
+						return
+					}
 					printOK("Campaign %s%s%s resumed.", cWhite, cam.Name, ansiR)
-					return
+					resumed = true
+					break
 				}
 			}
-			printInfo("No paused campaigns to resume.")
+			if !resumed {
+				printInfo("No paused campaigns to resume.")
+			}
 		},
 	}
 
@@ -250,23 +264,39 @@ func reconCmd() *cobra.Command {
 					return
 				}
 			}
-			printWarn("Bridge offline — using the native TCP scanner")
-			host := strings.TrimSpace(target)
-			if host == "" || strings.Contains(host, "/") {
-				printErr("native scanner supports single IPs only; CIDR sweeps land in v1.2")
+			printWarn("Bridge offline — using the native TCP scanner (IPs, hostnames and CIDR blocks)")
+			targets, err := recon.ExpandTargets(target)
+			if err != nil {
+				printErr("invalid target: %v", err)
 				return
 			}
-			printInfo("Scanning %d common TCP ports on %s%s%s …", len(recon.DefaultPorts), cWhite+ansiB, host, ansiR)
-			res := recon.ScanHost(c.Context(), host, recon.DefaultPorts, 1500*time.Millisecond, true)
-			tbl := newTable("Port", "State", "Service", "Banner")
+			if len(targets) > 1 {
+				printInfo("CIDR sweep: %d hosts in scope (cap %d)", len(targets), recon.MaxScanHosts)
+			}
+			results := recon.ScanTargets(c.Context(), targets, recon.DefaultPorts, 1500*time.Millisecond, true)
+			tbl := newTable("Host", "Port", "State", "Service", "Banner")
 			open := 0
-			for _, r := range res {
-				if r.Open {
-					open++
-					tbl.addRow(fmt.Sprintf("%d", r.Port), cSuccess+"open"+ansiR, recon.ServiceGuess(r.Port), trunc(r.Banner, 28))
+			probed := 0
+			for _, host := range targets {
+				for _, r := range results[host] {
+					probed++
+					if r.Open {
+						open++
+						tbl.addRow(cCyan+host+ansiR, fmt.Sprintf("%d", r.Port), cSuccess+"open"+ansiR, recon.ServiceGuess(r.Port), trunc(r.Banner, 28))
+					}
 				}
 			}
-			printOK("Scan complete — %d/%d ports open", open, len(res))
+			alive := 0
+			for host, ports := range results {
+				for _, r := range ports {
+					if r.Open {
+						alive++
+						_ = host
+						break
+					}
+				}
+			}
+			printOK("Scan complete — %d hosts alive, %d/%d ports open", alive, open, probed)
 			if open > 0 {
 				tbl.render()
 			}
@@ -414,8 +444,17 @@ func agentCmd() *cobra.Command {
 				printErr("Usage: vesper agent interact <session-id>")
 				return
 			}
-			printInfo("Opening session %s%s%s …", cCyan+ansiB, a[0], ansiR)
-			printOK("Session active — use %svesper console%s for full interaction.", cSuccess, ansiR)
+			state := GetOrCreateState()
+			if state != nil {
+				for _, ag := range state.GetAgents() {
+					if ag.SessionID == a[0] || ag.ID == a[0] {
+						printInfo("Session %s@%s (%s) — %s", cWhite+ag.Username, ag.LocalIP+ansiR, ag.OS, string(ag.Status))
+						printErr("Interactive shells are not implemented yet (roadmap v1.2).")
+						return
+					}
+				}
+			}
+			printErr("Session %s not found.", a[0])
 		},
 	}
 
@@ -450,7 +489,11 @@ func exploitCmd() *cobra.Command {
 						printOK("%v vectors identified", v)
 						return
 					}
+					printErr("Bridge reachable but the scan returned no findings key (raw: %v).", result)
+					return
 				}
+				printErr("Bridge call failed: %v — no results are invented.", err)
+				return
 			}
 			printErr("Bridge offline — privesc checks require the bridge; no results are invented.")
 			fmt.Fprintln(ConsoleOut)
@@ -577,13 +620,28 @@ func aiCmd() *cobra.Command {
 		Run: func(c *cobra.Command, a []string) {
 			on, _ := c.Flags().GetBool("on")
 			off, _ := c.Flags().GetBool("off")
+			state := GetOrCreateState()
+			if state == nil || state.Auto == nil {
+				printErr("AutoMode requires initialized state (try 'vesper console' or 'vesper --dashboard').")
+				return
+			}
 			switch {
 			case on:
-				printOK("AutoMode %sENABLED%s — AI will approve and execute decisions automatically.", cSuccess+ansiB, ansiR)
+				if !state.Auto.IsEnabled() {
+					state.Auto.Toggle()
+				}
+				printOK("AutoMode %sENABLED%s — decisions above %.2f confidence are executed automatically.", cSuccess+ansiB, ansiR, state.Cfg.AI.MinConfidence)
 			case off:
-				printWarn("AutoMode %sDISABLED%s — Manual approval required.", ansiB, ansiR)
+				if state.Auto.IsEnabled() {
+					state.Auto.Stop()
+				}
+				printWarn("AutoMode %sDISABLED%s — manual approval required.", ansiB, ansiR)
 			default:
-				printInfo("AutoMode status: use %s--on%s or %s--off%s flags.", cSuccess, ansiR, cDanger, ansiR)
+				status := cDanger + "disabled" + ansiR
+				if state.Auto.IsEnabled() {
+					status = cSuccess + "enabled" + ansiR
+				}
+				printInfo("AutoMode is %s — use %s--on%s or %s--off%s flags.", status, cSuccess, ansiR, cDanger, ansiR)
 			}
 		},
 	}
@@ -663,19 +721,15 @@ func labCmd() *cobra.Command {
 		Run: func(c *cobra.Command, a []string) {
 			scenario, _ := c.Flags().GetString("scenario")
 			printInfo("Starting lab (scenario=%s%s%s) …", cCyan, scenario, ansiR)
-			out, _ := exec.Command("docker", "compose", "-f", "lab/docker-compose.yml", "up", "-d").CombinedOutput()
+			out, err := exec.Command("docker", "compose", "-f", "lab/docker-compose.yml", "up", "-d").CombinedOutput()
 			if len(strings.TrimSpace(string(out))) > 0 {
 				fmt.Fprintln(ConsoleOut, cMuted+string(out)+ansiR)
 			}
-			fmt.Fprintln(ConsoleOut)
-			tbl := newTable("Container", "IP", "Role")
-			tbl.addRow(cWhite+"vesper-attacker"+ansiR, cCyan+"172.20.0.10"+ansiR, "C2 / Operator")
-			tbl.addRow(cWhite+"vesper-target1"+ansiR, cCyan+"172.20.0.20"+ansiR, "Victim (Linux)")
-			tbl.addRow(cWhite+"vesper-target2"+ansiR, cCyan+"172.20.0.21"+ansiR, "Victim (Windows)")
-			tbl.addRow(cWhite+"vesper-dashboard"+ansiR, cCyan+"172.20.0.30"+ansiR, "Web UI")
-			tbl.addRow(cWhite+"vesper-ollama"+ansiR, cCyan+"172.20.0.40"+ansiR, "Local AI")
-			tbl.render()
-			fmt.Fprintf(ConsoleOut, "\n  %s●%s Dashboard: %shttp://localhost:3000%s\n\n", cSuccess, ansiR, cInfo+ansiB, ansiR)
+			if err != nil {
+				printErr("Docker compose failed: %v", err)
+				return
+			}
+			printOK("Lab stack started (see docker ps for the real container list).")
 		},
 	}
 
@@ -683,7 +737,14 @@ func labCmd() *cobra.Command {
 		Use:   "down",
 		Short: "Stop and remove lab containers",
 		Run: func(c *cobra.Command, a []string) {
-			_ = exec.Command("docker", "compose", "-f", "lab/docker-compose.yml", "down").Run()
+			out, err := exec.Command("docker", "compose", "-f", "lab/docker-compose.yml", "down").CombinedOutput()
+			if len(strings.TrimSpace(string(out))) > 0 {
+				fmt.Fprintln(ConsoleOut, cMuted+string(out)+ansiR)
+			}
+			if err != nil {
+				printErr("Docker compose down failed: %v", err)
+				return
+			}
 			printOK("Lab stopped.")
 		},
 	}

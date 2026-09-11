@@ -2,7 +2,7 @@
 //
 // The BridgeClient connects to a Python gRPC BridgeServer implementing
 // BridgeService (ExecuteModule, AIAnalyze, ReconStream, HealthCheck).
-// This enables the Go agent to invoke Python modules and 107+ ransomware
+// This enables the Go agent to invoke Python handler modules (recon,
 // handlers without embedding Python.
 //
 // Protocol: gRPC with protobuf schema (pkg/proto/bridge.proto).

@@ -27,6 +27,7 @@ var rootCmd = &cobra.Command{
 		var err error
 		cfg, err = config.Load(cfgPath)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "  [!] config %s unreadable (%v) — running with defaults\n", cfgPath, err)
 			cfg = config.Default()
 		}
 		// Identity/help queries answer quietly; every operational
@@ -34,6 +35,15 @@ var rootCmd = &cobra.Command{
 		name := cmd.Name()
 		applySafety(cfg, name == "version" || name == "help" || name == "completion")
 		return nil
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		// one-shot commands: tear down the state they created (bridge
+		// subprocess + DB) and any listeners, instead of leaking them
+		if globalState != nil && cmd.Name() != "console" && !launchDashboard {
+			ShutdownListeners()
+			globalState.Stop()
+			globalState = nil
+		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		switch {

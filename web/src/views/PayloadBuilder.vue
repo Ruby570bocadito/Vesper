@@ -67,26 +67,17 @@
           </div>
         </div>
 
-        <!-- Evasion / Obfuscation -->
+        <!-- Honest note: AMSI/ETW bypasses and encoders are NOT implemented
+             in the builder — showing them as options was theater. Real
+             obfuscation: `vesper payload generate --evasion` (garble+UPX). -->
         <div class="p-3 border border-gray-800 rounded bg-black/30 space-y-2">
           <h3 class="text-xs text-orange uppercase tracking-wider mb-2">Evasion & Obfuscation</h3>
-          <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-400">
-            <input type="checkbox" v-model="config.amsi" class="accent-orange" :disabled="config.os !== 'Windows'" />
-            AMSI / ETW Bypass
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-400">
-            <input type="checkbox" v-model="config.unhook" class="accent-orange" :disabled="config.os !== 'Windows'" />
-            EDR Unhooking (Direct Syscalls)
-          </label>
-          <div class="pt-2">
-            <label class="block text-gray-500 text-[10px] mb-1">Obfuscation Encoder</label>
-            <select v-model="config.encoder" class="w-full bg-dark border border-gray-800 rounded px-2 py-1 text-xs text-gray-300 focus:border-orange focus:outline-none">
-              <option value="none">None (Raw)</option>
-              <option value="shikata_ga_nai">Shikata Ga Nai (Polymorphic XOR)</option>
-              <option value="aes256">AES-256 Encryption</option>
-              <option value="rc4">RC4 Encryption</option>
-            </select>
-          </div>
+          <p class="text-[10px] text-gray-500 leading-relaxed">
+            Not configurable from the web builder yet. The compiled agent is a
+            plain <span class="text-gray-400">go build</span>; use
+            <span class="text-gray-400">vesper payload generate --evasion stealth</span>
+            for garble obfuscation + UPX packing.
+          </p>
         </div>
 
         <button @click="generatePayload" :disabled="compiling" class="btn w-full mt-2 py-2 text-sm uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(153,51,255,0.2)] hover:shadow-[0_0_15px_rgba(153,51,255,0.5)]">
@@ -133,9 +124,6 @@ const config = ref({
   format: 'exe',
   lhost: '',
   lport: 8443,
-  amsi: true,
-  unhook: false,
-  encoder: 'none'
 })
 
 // Auto-adjust format when OS changes
@@ -143,10 +131,6 @@ watch(() => config.value.os, (newOS) => {
   if (newOS === 'Windows') config.value.format = 'exe'
   if (newOS === 'Linux') config.value.format = 'elf'
   if (newOS === 'macOS') config.value.format = 'macho'
-  if (newOS !== 'Windows') {
-    config.value.amsi = false
-    config.value.unhook = false
-  }
 })
 
 const logs = ref([])
@@ -182,10 +166,6 @@ const generatePayload = async () => {
   addLog(`[*] OS: ${config.value.os} | Arch: ${config.value.arch} | Format: ${config.value.format}`, 'info')
   addLog(`[*] C2 Endpoint: wss://${config.value.lhost}:${config.value.lport}`, 'info')
 
-  if (config.value.amsi) addLog(`[+] Injecting AMSI/ETW bypass stubs`, 'warn')
-  if (config.value.unhook) addLog(`[+] Resolving direct syscalls for EDR unhooking (Halo's Gate)`, 'warn')
-  if (config.value.encoder !== 'none') addLog(`[+] Applying ${config.value.encoder} obfuscation...`, 'warn')
-
   try {
     const res = await fetch('/api/payload/generate', {
       method: 'POST',
@@ -201,24 +181,14 @@ const generatePayload = async () => {
     }
 
     const data = await res.json()
-    
-    // Simulate compilation delay for dramatic effect
-    setTimeout(() => {
-      addLog(`[+] Generating cryptographic identity (X25519)`, 'info')
-    }, 800)
-    
-    setTimeout(() => {
-      addLog(`[+] Linking binary modules...`, 'cmd')
-      data.logs.forEach(l => addLog(`compiler: ${l}`, 'gray'))
-    }, 1500)
 
-    setTimeout(() => {
-      payloadSize.value = data.size
-      b64Data.value = data.b64
-      addLog(`\n[✓] Build completed successfully. Size: ${data.size}`, 'success')
-      payloadReady.value = true
-      compiling.value = false
-    }, 2800)
+    // real compiler output only — no simulated stages
+    ;(data.logs || []).forEach(l => addLog(`compiler: ${l}`, 'gray'))
+    payloadSize.value = data.size
+    b64Data.value = data.b64
+    addLog(`\n[✓] Build completed successfully. Size: ${data.size}`, 'success')
+    payloadReady.value = true
+    compiling.value = false
 
   } catch (err) {
     addLog(`[!] Network error: ${err.message}`, 'error')
@@ -226,9 +196,13 @@ const generatePayload = async () => {
   }
 }
 
-const copyBase64 = () => {
-  navigator.clipboard.writeText(b64Data.value)
-  addLog('[*] Base64 payload copied to clipboard', 'info')
+const copyBase64 = async () => {
+  try {
+    await navigator.clipboard.writeText(b64Data.value)
+    addLog('[*] Base64 payload copied to clipboard', 'info')
+  } catch (e) {
+    addLog(`[!] Clipboard copy failed: ${e.message}`, 'error')
+  }
 }
 
 const download = () => {

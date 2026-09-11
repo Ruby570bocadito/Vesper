@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/ruby570bocadito/vesper/internal/appstate"
 	"github.com/ruby570bocadito/vesper/internal/orchestrator"
+	"github.com/ruby570bocadito/vesper/internal/recon"
 	"github.com/ruby570bocadito/vesper/pkg/shared/config"
 	"github.com/ruby570bocadito/vesper/pkg/shared/logger"
 	"github.com/ruby570bocadito/vesper/pkg/shared/types"
@@ -31,9 +33,12 @@ type tokenBucket struct {
 	maxTokens  float64
 	refillRate float64
 	lastRefill time.Time
+	mu         sync.Mutex
 }
 
 func (b *tokenBucket) allow() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	now := time.Now()
 	elapsed := now.Sub(b.lastRefill).Seconds()
 	b.tokens += elapsed * b.refillRate
@@ -226,12 +231,19 @@ func (s *Server) registerRoutes() {
 }
 
 // Start begins listening on the configured port.
+// The bind host comes from cfg.Server.Host, which the safety posture
+// (cmd/vesper/safety.go) forces to 127.0.0.1 for unauthorized runs —
+// the unauthenticated dashboard must never reach other interfaces.
 func (s *Server) Start() error {
 	port := s.port
 	if port == 0 {
 		port = 9090
 	}
-	addr := fmt.Sprintf(":%d", port)
+	host := s.cfg.Server.Host
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	addr := fmt.Sprintf("%s:%d", host, port)
 	s.srv.Addr = addr
 
 	s.log.Infof("API server starting on %s", addr)
@@ -346,7 +358,12 @@ func (s *Server) handleAgentByID(w http.ResponseWriter, r *http.Request) {
 				Data: map[string]string{"agent_id": id},
 			})
 
-			writeJSON(w, http.StatusOK, map[string]bool{"success": true})
+			// honest: we can only deregister — there is no implant
+			// command channel to terminate the remote process yet
+			writeJSON(w, http.StatusOK, map[string]string{
+				"status": "deregistered", "agent": id,
+				"note": "agent removed from registry; no C2 command channel exists to kill the remote process",
+			})
 			return
 		}
 		writeError(w, http.StatusNotFound, "unknown action")
@@ -420,18 +437,30 @@ func (s *Server) handleCampaignByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for sub-actions
+	// Mutating sub-actions are POST-only (GET would be CSRF-able).
+	if strings.HasSuffix(path, "/pause") || strings.HasSuffix(path, "/resume") {
+		if r.Method != http.MethodPost {
+			writeError(w, http.StatusMethodNotAllowed, "POST required")
+			return
+		}
+	}
+
+	var stateErr error
 	if strings.HasSuffix(path, "/pause") {
-		campaign.Status = types.CampaignStatusPaused
-		s.hub.Broadcast(WSMessage{Type: "campaign.paused", CampaignID: id})
-		writeJSON(w, http.StatusOK, campaign)
+		stateErr = s.orch.PauseCampaign(id)
+	} else if strings.HasSuffix(path, "/resume") {
+		stateErr = s.orch.ResumeCampaign(id)
+	}
+
+	if stateErr != nil {
+		writeError(w, http.StatusInternalServerError, "state update failed")
 		return
 	}
-	if strings.HasSuffix(path, "/resume") {
-		campaign.Status = types.CampaignStatusRunning
+
+	if strings.HasSuffix(path, "/pause") {
+		s.hub.Broadcast(WSMessage{Type: "campaign.paused", CampaignID: id})
+	} else if strings.HasSuffix(path, "/resume") {
 		s.hub.Broadcast(WSMessage{Type: "campaign.resumed", CampaignID: id})
-		writeJSON(w, http.StatusOK, campaign)
-		return
 	}
 
 	writeJSON(w, http.StatusOK, campaign)
@@ -514,32 +543,79 @@ func (s *Server) handleReconScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Kick off async scan via orchestrator
+	// Kick off a REAL native scan (single IPs, hostnames and CIDR
+	// blocks up to recon.MaxScanHosts hosts). Results are recorded in
+	// shared state and broadcast with actual findings — never mocks.
 	go func() {
 		s.log.Infof("starting recon scan: target=%s mode=%s", req.Target, req.Mode)
 
-		ctx := context.Background()
-		// Mock recon results for now since orchestrator doesn't have RunRecon
-		// In a real scenario, this would create a campaign and wait for recon phase
-		results := map[string]interface{}{"status": "started", "target": req.Target}
-		s.log.Infof("recon scan started for %s", req.Target)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cancel()
 
-		_ = results
+		results := map[string]interface{}{"target": req.Target, "mode": req.Mode}
 
-		if s.state != nil && s.state.Bridge != nil && s.state.Bridge.Connected() {
-			bridgeResp, bridgeErr := s.state.Bridge.CallRaw(ctx, "recon", "scan", map[string]interface{}{
-				"target": req.Target,
-				"mode":   req.Mode,
-			})
-			if bridgeErr == nil && bridgeResp != nil {
-				s.log.Infof("recon bridge augmented results for %s", req.Target)
+		targets, err := recon.ExpandTargets(req.Target)
+		if err != nil {
+			results["status"] = "error"
+			results["error"] = err.Error()
+			s.hub.Broadcast(WSMessage{Type: "recon.scan_complete", Data: results})
+			return
+		}
+
+		if req.Mode == "passive" {
+			results["status"] = "completed"
+			results["hosts_in_scope"] = len(targets)
+			results["hosts"] = targets
+			results["note"] = "passive mode: no active probing performed"
+			s.hub.Broadcast(WSMessage{Type: "recon.scan_complete", Data: results})
+			return
+		}
+
+		scan := recon.ScanTargets(ctx, targets, recon.DefaultPorts, 1500*time.Millisecond, true)
+
+		type openPort struct {
+			Host    string `json:"host"`
+			Port    int    `json:"port"`
+			Service string `json:"service"`
+			Banner  string `json:"banner,omitempty"`
+		}
+		var open []openPort
+		alive := map[string][]int{}
+		for host, ports := range scan {
+			for _, pr := range ports {
+				if pr.Open {
+					open = append(open, openPort{Host: host, Port: pr.Port,
+						Service: recon.ServiceGuess(pr.Port), Banner: pr.Banner})
+					alive[host] = append(alive[host], pr.Port)
+				}
 			}
 		}
 
-		s.hub.Broadcast(WSMessage{
-			Type: "recon.scan_complete",
-			Data: map[string]interface{}{"target": req.Target, "mode": req.Mode, "results": results},
-		})
+		// record findings in shared state so the dashboard shows them
+		for host, ports := range alive {
+			if s.state != nil {
+				s.state.AddHost(&types.Target{IP: host, OpenPorts: ports})
+			}
+			if s.orch != nil && s.orch.WorldGraph() != nil {
+				s.orch.WorldGraph().AddHost(host, "", "")
+				for _, p := range ports {
+					s.orch.WorldGraph().AddService(host, orchestrator.WorldService{
+						Name: recon.ServiceGuess(p), Port: p,
+					})
+				}
+			}
+			s.mu.Lock()
+			s.hosts = append(s.hosts, &types.Target{IP: host, OpenPorts: ports})
+			s.mu.Unlock()
+		}
+
+		results["status"] = "completed"
+		results["hosts_found"] = len(alive)
+		results["open_ports"] = open
+		s.log.Infof("recon scan completed for %s: %d hosts, %d open ports",
+			req.Target, len(alive), len(open))
+
+		s.hub.Broadcast(WSMessage{Type: "recon.scan_complete", Data: results})
 	}()
 
 	writeJSON(w, http.StatusAccepted, map[string]string{
@@ -711,10 +787,12 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	campaignID := r.URL.Query().Get("campaign_id")
 
 	// Read metrics from live state
+	s.mu.RLock()
 	agentCount := len(s.agents)
+	s.mu.RUnlock()
+	activeAgents := 0
 	hostCount := 0
 	vulnCount := 0
-	successfulExploits := 0
 	credsCaptured := 0
 	lateralMoves := 0
 
@@ -727,35 +805,22 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		lateralMoves = 0 // state doesn't have GetLateralEdges, calculate from worldgraph if needed
 		for _, a := range s.state.GetAgents() {
 			if a.Status == "active" {
-				successfulExploits++
+				activeAgents++
 			}
 		}
-	} else {
-		vulnCount = len(s.vulns)
-		successfulExploits = len(s.agents)
 	}
 
-	// Compute stealth_rating from live data: starts at 0, grows as agents operate without detection
-	stealthRating := 0.0
-	if agentCount > 0 {
-		// Base 0.7 if agents are alive, +0.1 per exploit that didn't trigger detection
-		stealthRating = 0.70 + (float64(successfulExploits) * 0.02)
-		if stealthRating > 0.99 {
-			stealthRating = 0.99
-		}
-	}
-
+	// NOTE: deliberately NO stealth_rating / total_exploits /
+	// persistence_installed here — nothing in the codebase measures
+	// those, and inventing numbers violates the project's honesty
+	// contract. The dashboard shows only real counters.
 	metrics := map[string]interface{}{
-		"total_agents":          agentCount,
-		"active_agents":         agentCount,
-		"total_hosts":           hostCount,
-		"total_vulns":           vulnCount,
-		"total_exploits":        vulnCount,
-		"successful_exploits":   successfulExploits,
-		"credentials_captured":  credsCaptured,
-		"lateral_moves":         lateralMoves,
-		"persistence_installed": agentCount,
-		"stealth_rating":        stealthRating,
+		"total_agents":         agentCount,
+		"active_agents":        activeAgents,
+		"total_hosts":          hostCount,
+		"total_vulns":          vulnCount,
+		"credentials_captured": credsCaptured,
+		"lateral_moves":        lateralMoves,
 	}
 
 	if campaignID != "" {
@@ -774,19 +839,9 @@ func (s *Server) handleBlueMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use AppState data if available, otherwise return empty
+	// Honest empty set: no EDR-detection telemetry is collected yet,
+	// so reporting per-agent "bypassed" events would be fabrication.
 	blue := []map[string]interface{}{}
-	if s.state != nil {
-		// BlueForge data from live agents
-		for _, a := range s.state.GetAgents() {
-			if a.Status == "online" || a.Status == "active" {
-				blue = append(blue, map[string]interface{}{
-					"tool": "Vesper-Agent", "detected": false, "alert_type": "bypassed",
-					"agent_id": a.ID, "timestamp": time.Now().Format(time.RFC3339),
-				})
-			}
-		}
-	}
 	if len(blue) == 0 {
 		blue = []map[string]interface{}{}
 	}
@@ -799,12 +854,17 @@ func (s *Server) handleBlueMetrics(w http.ResponseWriter, r *http.Request) {
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		// Validate against allowed origins (e.g., localhost and dashboard port)
+		// Same-origin only for browsers (the dashboard is served
+		// from this very server). Non-browser clients send no Origin.
 		origin := r.Header.Get("Origin")
 		if origin == "" {
-			return true // Allow non-browser clients
+			return true
 		}
-		return strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")
+		u, err := url.Parse(origin)
+		if err != nil {
+			return false
+		}
+		return u.Host == r.Host
 	},
 }
 
@@ -1265,7 +1325,11 @@ func (s *Server) handleModulePush(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "module and agent_id required"})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "pushed", "module": req.Module, "agent": req.AgentID})
+	// no implant command channel exists yet (roadmap v1.2)
+	writeJSON(w, http.StatusNotImplemented, map[string]string{
+		"status": "not_implemented", "module": req.Module, "agent": req.AgentID,
+		"error": "module push requires an implant command channel (roadmap v1.2)",
+	})
 }
 
 func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
@@ -1285,7 +1349,7 @@ func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
 	for _, a := range agents {
 		resp = append(resp, SessionResponse{
 			ID: a.ID, Hostname: a.Hostname,
-			Username: a.Username, OS: a.OS, State: "active",
+			Username: a.Username, OS: a.OS, State: string(a.Status),
 		})
 	}
 	writeJSON(w, http.StatusOK, resp)
@@ -1301,19 +1365,9 @@ func (s *Server) handleCreds(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, []interface{}{})
 		return
 	}
-	type CredResponse struct {
-		Username string `json:"Username"`
-		Domain   string `json:"Domain"`
-		Source   string `json:"Source"`
-		Password string `json:"Password"`
-	}
-	var resp []CredResponse
-	for _, c := range creds {
-		resp = append(resp, CredResponse{
-			Username: c.Username, Domain: c.Domain, Source: c.Source, Password: c.Password,
-		})
-	}
-	writeJSON(w, http.StatusOK, resp)
+	// serialize types.Credential directly (lowercase json tags match
+	// the dashboard schema: username/hash_type/hash/domain/source/agent_id)
+	writeJSON(w, http.StatusOK, creds)
 }
 
 func (s *Server) handleAIConfig(w http.ResponseWriter, r *http.Request) {

@@ -86,19 +86,25 @@ async function refreshSuggestions() {
 async function approve(id) {
   acting.value = true
   try {
-    await aiStore.approveDecision(id)
-    const d = decisions.value.find(x => x.id === id)
-    if (d) d.approved = true
-  } finally { acting.value = false }
+    const ok = await aiStore.approveDecision(id)
+    if (ok) {
+      const d = decisions.value.find(x => x.id === id)
+      if (d) d.approved = true
+    }
+  } catch { /* UI must not claim success on a failed request */ }
+  finally { acting.value = false }
 }
 
 async function reject(id) {
   acting.value = true
   try {
-    await aiStore.rejectDecision(id)
-    const d = decisions.value.find(x => x.id === id)
-    if (d) d.rejected = true
-  } finally { acting.value = false }
+    const ok = await aiStore.rejectDecision(id)
+    if (ok) {
+      const d = decisions.value.find(x => x.id === id)
+      if (d) d.rejected = true
+    }
+  } catch { /* UI must not claim success on a failed request */ }
+  finally { acting.value = false }
 }
 
 function decisionBorder(d) {

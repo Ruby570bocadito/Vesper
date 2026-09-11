@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"sync"
 	"time"
@@ -25,7 +27,8 @@ type WSClient struct {
 	campaignID string
 	hub        *WSHub
 	send       chan []byte
-	mu         sync.Mutex
+	mu         sync.Mutex // guards send channel close vs Send()
+	closed     bool
 }
 
 // Send sends a message to this client.
@@ -38,12 +41,28 @@ func (c *WSClient) Send(msg WSMessage) {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.closed {
+		return
+	}
 
 	select {
 	case c.send <- data:
 	default:
 		// Client buffer full — skip message
 	}
+}
+
+// close marks the client as closed and shuts its channel + connection.
+// Safe to call multiple times.
+func (c *WSClient) close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed {
+		return
+	}
+	c.closed = true
+	close(c.send)
+	_ = c.conn.Close()
 }
 
 // WSHub manages all WebSocket connections and broadcasts.
@@ -54,8 +73,7 @@ type WSHub struct {
 	unregister chan *WSClient
 	broadcast  chan WSMessage
 	mu         sync.RWMutex
-	idCounter  int
-	running    bool
+	idGen      func() string // unique client IDs (overridable in tests)
 }
 
 // NewWSHub creates a new WebSocket hub.
@@ -66,6 +84,7 @@ func NewWSHub(log *logger.Logger) *WSHub {
 		register:   make(chan *WSClient, 32),
 		unregister: make(chan *WSClient, 32),
 		broadcast:  make(chan WSMessage, 256),
+		idGen:      randomClientID,
 	}
 
 	go hub.run()
@@ -73,7 +92,6 @@ func NewWSHub(log *logger.Logger) *WSHub {
 }
 
 func (h *WSHub) run() {
-	h.running = true
 	for {
 		select {
 		case client := <-h.register:
@@ -88,8 +106,7 @@ func (h *WSHub) run() {
 			delete(h.clients, client.id)
 			count := len(h.clients)
 			h.mu.Unlock()
-			close(client.send)
-			client.conn.Close()
+			client.close() // close(send) under client.mu — no send-on-closed race
 			h.log.Debugf("ws client disconnected (id=%s, total=%d)", client.id, count)
 
 		case msg := <-h.broadcast:
@@ -108,9 +125,8 @@ func (h *WSHub) run() {
 
 // Register adds a new WebSocket client.
 func (h *WSHub) Register(conn *websocket.Conn, campaignID string) *WSClient {
-	h.idCounter++
 	client := &WSClient{
-		id:         generateClientID(h.idCounter),
+		id:         h.uniqueID(),
 		conn:       conn,
 		campaignID: campaignID,
 		hub:        h,
@@ -119,19 +135,33 @@ func (h *WSHub) Register(conn *websocket.Conn, campaignID string) *WSClient {
 
 	h.register <- client
 
-	// Start write pump
+	// Write pump: exits when client.send is closed by the hub; a write
+	// error also deregisters so dead clients never linger.
 	go func() {
 		for msg := range client.send {
 			client.mu.Lock()
 			err := client.conn.WriteMessage(websocket.TextMessage, msg)
 			client.mu.Unlock()
 			if err != nil {
-				break
+				h.Unregister(client)
+				return
 			}
 		}
 	}()
 
 	return client
+}
+
+func (h *WSHub) uniqueID() string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for range 100 {
+		id := h.idGen()
+		if _, taken := h.clients[id]; !taken {
+			return id
+		}
+	}
+	return time.Now().Format("150405.000000000")
 }
 
 // Unregister removes a WebSocket client.
@@ -155,17 +185,22 @@ func (h *WSHub) ClientCount() int {
 	return len(h.clients)
 }
 
-// Stop shuts down the hub.
+// Stop shuts down the hub and closes every client connection.
 func (h *WSHub) Stop() {
-	h.running = false
 	h.mu.Lock()
-	for id, client := range h.clients {
-		client.conn.Close()
-		delete(h.clients, id)
+	clients := make([]*WSClient, 0, len(h.clients))
+	for _, client := range h.clients {
+		clients = append(clients, client)
+		delete(h.clients, client.id)
 	}
 	h.mu.Unlock()
+	for _, client := range clients {
+		client.close()
+	}
 }
 
-func generateClientID(counter int) string {
-	return "ws-" + time.Now().Format("150405") + "-" + string(rune('A'+counter%26))
+func randomClientID() string {
+	buf := make([]byte, 8)
+	_, _ = rand.Read(buf)
+	return "ws-" + hex.EncodeToString(buf)
 }

@@ -5,7 +5,8 @@ Replaces the raw TCP/JSON bridge with full gRPC using protobuf schemas.
 Implements BridgeService: ExecuteModule, AIAnalyze, ReconStream, HealthCheck.
 
 Protocol: gRPC with X25519+XChaCha20-Poly1305 (handled by Go side).
-Modules: 107 ransomware handlers + 20 inline modules (recon, AI, worm, etc.).
+Modules: 4 handler groups (recon, attacks, cred_dump, bloodhound) with 8
+handlers, plus inline stubs that fail honestly (see registry).
 
 Usage:
   python3 bridge.py --host 127.0.0.1 --port 9100
@@ -236,47 +237,45 @@ def recon_handler(params):
     return result
 
 
-@registry.register("ai_analyze", "AI analysis via local Ollama", "1.0", "c2")
+@registry.register("ai_analyze", "AI analysis via local Ollama", "0.0", "stub")
 def ai_analyze_handler(params):
-    prompt = params.get("prompt", "")
-    model = params.get("model", "llama3.1:8b")
-    return {"prompt": prompt, "model": model, "response": "", "tokens": 0}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "ai analysis is not implemented (stub)"}
 
-
-@registry.register("privesc", "Privilege escalation", "1.0", "exploitation")
+@registry.register("privesc", "Privilege escalation", "0.0", "stub")
 def privesc_handler(params):
-    return {"techniques_tried": 0, "successful": False, "new_privs": []}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "privilege escalation is not implemented (stub)"}
 
-
-@registry.register("persist", "Persistence mechanisms", "1.0", "installation")
+@registry.register("persist", "Persistence mechanisms", "0.0", "stub")
 def persist_handler(params):
-    return {"methods_installed": 0, "reboot_survives": False}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "persistence is not implemented (stub)"}
 
-
-@registry.register("worm", "Network worm propagation", "1.0", "lateral")
+@registry.register("worm", "Network worm propagation", "0.0", "stub")
 def worm_handler(params):
-    return {"hosts_scanned": 0, "infected": 0, "propagation_method": ""}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "worm propagation is not implemented (stub)"}
 
-
-@registry.register("blue", "BlueForge defense metrics", "1.0", "actions_on_objective")
+@registry.register("blue", "BlueForge defense metrics", "0.0", "stub")
 def blue_handler(params):
-    return {"coverage": 0.0, "techniques_tracked": 0, "detections": 0}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "blue-team metrics is not implemented (stub)"}
 
-
-@registry.register("evasion", "AMSI/ETW evasion", "1.0", "c2")
+@registry.register("evasion", "AMSI/ETW evasion", "0.0", "stub")
 def evasion_handler(params):
-    return {"amsi_patched": False, "etw_disabled": False, "sandbox_detected": False}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "evasion is not implemented (stub)"}
 
-
-@registry.register("report", "Campaign report generator", "1.0", "actions_on_objective")
+@registry.register("report", "Campaign report generator", "0.0", "stub")
 def report_handler(params):
-    return {"format": params.get("format", "json"), "report": "", "size_bytes": 0}
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "report generation is not implemented (stub)"}
 
-
-@registry.register("exfil", "Data exfiltration", "1.0", "exfiltration")
+@registry.register("exfil", "Data exfiltration", "0.0", "stub")
 def exfil_handler(params):
-    return {"bytes_exfiltrated": 0, "files": 0, "destination": ""}
-
+    # honest stub: not implemented — an empty "success" would be fabrication
+    return {"success": False, "error": "exfiltration is not implemented (stub)"}
 
 @registry.register("health", "Health check + module listing", "1.0", "c2")
 def health_handler(params):
@@ -366,7 +365,7 @@ class BridgeServiceServicer(bridge_pb2_grpc.BridgeServiceServicer):
         result = registry.execute("health", {})
         data = result.get("result", {})
         inline = data.get("inline_modules", 0)
-        handlers = data.get("ransomware_handlers", 0)
+        handlers = data.get("handler_groups", 0)
         return bridge_pb2.HealthCheckResponse(
             ok=result.get("success", False),
             module_name="vesper-bridge",

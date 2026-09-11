@@ -48,24 +48,12 @@
         
         <div class="space-y-3 font-mono text-xs">
           <div>
-            <label class="block text-gray-500 mb-1">Provider</label>
-            <select v-model="config.provider" class="w-full bg-black border border-gray-800 rounded px-2 py-1 text-gray-300 focus:border-purple focus:outline-none">
-              <option value="ollama">Ollama (Local)</option>
-              <option value="openai">OpenAI (Cloud)</option>
-              <option value="anthropic">Anthropic (Cloud)</option>
-              <option value="azure">Azure OpenAI (Cloud)</option>
-            </select>
+            <label class="block text-gray-500 mb-1">Model (Ollama local)</label>
+            <input v-model="config.model" class="w-full bg-black border border-gray-800 rounded px-2 py-1 text-gray-300 focus:border-purple focus:outline-none" placeholder="llama3.1:8b" />
           </div>
-          <div>
-            <label class="block text-gray-500 mb-1">Model</label>
-            <select v-model="config.model" class="w-full bg-black border border-gray-800 rounded px-2 py-1 text-gray-300 focus:border-purple focus:outline-none">
-              <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
-            </select>
-          </div>
-          <div v-if="config.provider !== 'ollama'">
-            <label class="block text-gray-500 mb-1">API Key</label>
-            <input v-model="config.api_key" type="password" class="w-full bg-black border border-gray-800 rounded px-2 py-1 text-gray-300 focus:border-purple focus:outline-none" placeholder="sk-..." />
-          </div>
+          <!-- provider / api-key selects removed: the backend only
+               supports the local Ollama provider and silently dropped
+               everything else — showing them was placebo -->
           <div>
             <label class="block text-gray-500 mb-1">Temperature</label>
             <input type="number" step="0.1" min="0" max="2" v-model.number="config.temperature" class="w-full bg-black border border-gray-800 rounded px-2 py-1 text-gray-300 focus:border-purple focus:outline-none" />
@@ -76,7 +64,7 @@
             </button>
           </div>
           <div class="text-[10px] text-gray-600 mt-2 text-center">
-            {{ config.provider === 'ollama' ? `Ollama ${config.ollama_host}:${config.ollama_port}` : `${config.provider} cloud` }}
+            Ollama {{ config.ollama_host }}:{{ config.ollama_port }}
           </div>
         </div>
       </div>
@@ -131,30 +119,13 @@ const sendQuick = async (cmd) => {
   await scrollBottom()
 }
 
-const availableModels = computed(() => {
-  const m = {
-    ollama: ['llama3.2', 'llama3.1', 'mistral', 'codellama', 'phi3', 'mixtral', 'qwen2.5'],
-    openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    anthropic: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
-    azure: ['gpt-4o', 'gpt-4-turbo', 'gpt-35-turbo'],
-  }
-  return m[config.value.provider] || m.ollama
-})
-
 const showConfig = ref(false)
 const saving = ref(false)
 const config = ref({
-  provider: 'ollama',
   model: 'llama3.2',
   temperature: 0.7,
   ollama_host: 'localhost',
   ollama_port: 11434,
-  api_key: '',
-})
-
-// Watch provider changes to reset model
-watch(() => config.value.provider, () => {
-  config.value.model = availableModels.value[0]
 })
 
 // Probe config

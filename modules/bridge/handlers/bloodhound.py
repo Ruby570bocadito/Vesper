@@ -112,16 +112,13 @@ def _run_python_collector(domain, username, password) -> dict:
 
 
 def _analyze_paths(output_file: str) -> list:
-    """Analyze collected data for attack paths."""
-    paths = []
-    try:
-        if output_file.endswith(".zip"):
-            paths.append({"type": "high_value", "target": "Domain Admins", "steps": 2,
-                          "path": ["WS1@CORP.LOCAL", "DC@CORP.LOCAL", "DOMAIN ADMINS"]})
-            paths.append({"type": "kerberoastable", "target": "svc_mssql@CORP.LOCAL", "spn": "MSSQLSvc/db.corp.local"})
-    except Exception:
-        pass
-    return paths
+    """Analyze collected data for attack paths.
+
+    Real path derivation from collected graph data is not implemented
+    yet — returning fabricated CORP.LOCAL paths would be fabrication,
+    so this reports an empty set until the analyzer lands.
+    """
+    return []
 
 
 def _extract_int(text: str, prefix: str) -> int:

@@ -23,6 +23,8 @@ const connected = ref(false)
 let term = null
 let fitAddon = null
 let ws = null
+let reconnectTimer = null
+let disposed = false
 let resizeObserver = null
 
 onMounted(() => {
@@ -37,6 +39,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  disposed = true
+  if (reconnectTimer) clearTimeout(reconnectTimer)
   if (resizeObserver) resizeObserver.disconnect()
   if (ws) ws.close()
   if (term) term.dispose()
@@ -91,7 +95,9 @@ const initTerminal = () => {
 const connectWebSocket = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   // Use current host to avoid hardcoded ports
-  const wsUrl = `${protocol}//${window.location.host}/ws/terminal`
+  const token = localStorage.getItem('vesper_token') || ''
+  const auth = token ? `?token=${encodeURIComponent(token)}` : ''
+  const wsUrl = `${protocol}//${window.location.host}/ws/terminal${auth}`
   
   ws = new WebSocket(wsUrl)
 
@@ -108,7 +114,8 @@ const connectWebSocket = () => {
   ws.onclose = () => {
     connected.value = false
     term.write('\r\n\x1b[38;5;196m[!] Connection to Backend Console lost. Reconnecting...\x1b[0m\r\n')
-    setTimeout(connectWebSocket, 3000)
+    if (disposed) return
+    reconnectTimer = setTimeout(connectWebSocket, 3000)
   }
 
   ws.onerror = (err) => {

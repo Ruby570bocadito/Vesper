@@ -95,3 +95,4 @@ reports/*.json
 .opencode/
 vesper.db
 lab_root/
+vesper

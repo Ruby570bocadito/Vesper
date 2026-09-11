@@ -38,6 +38,7 @@ type AppState struct {
 	Cfg          *config.Config
 	Log          *logger.Logger
 	Orchestrator *orchestrator.Orchestrator
+	Auto         *orchestrator.AutoMode
 	Bridge       *agent.BridgeClient
 	DB           *sql.DB
 
@@ -114,7 +115,7 @@ func (s *AppState) Start(ctx context.Context) error {
 		if err := s.Bridge.StartBridge(ctx, bridgeScript); err != nil {
 			s.Log.Warnf("Python bridge start failed (modules will use offline fallback): %v", err)
 		} else {
-			s.Log.Infof("Python bridge connected: %d modules available", 9)
+			s.Log.Infof("Python bridge connected: %d modules available", len(s.GetModules()))
 		}
 	} else {
 		s.Log.Info("Python bridge script not found — modules use offline fallback")
@@ -124,15 +125,22 @@ func (s *AppState) Start(ctx context.Context) error {
 	wg := s.Orchestrator.WorldGraph()
 	wg.DiscoverFromAgents(s.GetAgents())
 
-	// Wire the dispatcher — connects Orchestrator → Agent → C2 → Modules
-	if !s.Cfg.AI.AutoApproval {
-		s.Cfg.AI.AutoApproval = true
-	}
+	// Wire the dispatcher — connects Orchestrator → Agent → C2 → Modules.
+	// AutoApproval is respected from config (was force-enabled in code).
 	if s.Cfg.AI.MinConfidence == 0 {
 		s.Cfg.AI.MinConfidence = 0.65
 	}
 	s.Orchestrator.SetDispatcher(dispatch.New(s, s.Cfg.AI.AutoApproval, s.Cfg.AI.MinConfidence))
 	s.Log.Info("Dispatcher wired: Orchestrator → Agent → C2 → Modules → Bridge")
+
+	// Autonomous engine: real AutoMode bound to the live dispatcher.
+	// Started here only when the config enables it; console/cobra can
+	// toggle it at runtime via state.Auto.
+	kc := orchestrator.NewKillChainOrchestrator(s.Log, s.Orchestrator)
+	s.Auto = orchestrator.NewAutoMode(s.Cfg, s.Log, s.Orchestrator, kc)
+	if s.Cfg.AI.AutoApproval {
+		s.Auto.Start(ctx)
+	}
 
 	s.Log.Infof("state started: %d agents, %d hosts, %d vulns, %d creds",
 		len(s.agents), len(s.hosts), len(s.vulns), len(s.creds))
@@ -141,6 +149,9 @@ func (s *AppState) Start(ctx context.Context) error {
 
 // Stop tears down all connections.
 func (s *AppState) Stop() {
+	if s.Auto != nil {
+		s.Auto.Stop()
+	}
 	_ = s.Bridge.Disconnect()
 	if s.DB != nil {
 		s.DB.Close()

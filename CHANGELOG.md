@@ -4,6 +4,96 @@ Todas las fechas son ISO-8601. Formato basado en [Keep a Changelog](https://keep
 
 ## [Unreleased] — ciclo v1.1 (calidad)
 
+### Corregido (auditoría profunda 2026-09-11)
+- **Seguridad**
+  - `/ws/terminal` ya no acepta conexiones cross-origin: same-origin estricto
+    y, si `dashboard.auth_token` está configurado, exige el token (`?token=`
+    o `Authorization: Bearer`); antes cualquier página web podía abrir el
+    terminal del operador (cross-site WebSocket hijacking = RCE)
+  - El API respetaba el puerto pero ignoraba `server.host`: en postura
+    LAB-ONLY bindeaba en todas las interfaces; ahora el bind pasa por el
+    mismo geofence (127.0.0.1 sin autorización)
+  - Rate limiter con data race real (token bucket mutado sin lock)
+  - Hub WebSocket: `close(send)` bajo mutex (evita panic send-on-closed),
+    IDs únicos por crypto/rand (antes colisionaban a las 26 conexiones) y
+    los clientes muertos se dan de baja solos
+  - `campaign pause/resume` vía API ya no escribe fuera del lock del
+    orquestador y exige POST (GET era CSRF-able)
+- **Crashes**
+  - `payload generate` paniqueaba con `out[:100]` si garble fallaba
+  - Deadlock permanente del terminal web tras escribir `exit`: la pipe
+    nunca se cerraba y el siguiente comando bloqueaba para siempre con
+    el mutex; ahora el ciclo de vida de la consola cierra la pipe y el
+    hub se regenera solo
+- **Honestidad (cero resultados fabricados)**
+  - `payload generate`: eliminadas las mentiras "basic XOR obfuscation
+    applied" y "polimórfico + UPX" incondicionales; `--c2` ahora se
+    inyecta de verdad (`-X main.C2Addr`) y `--stealth` placebo eliminado
+  - `listeners`: listeners TCP reales con Accept loop y conteo de
+    conexiones (antes un bind que nadie atendía marcado "active");
+    dns/icmp/smb/doh/ws devuelven error honesto en vez de fingir;
+    `remove/start/stop` respetan el ID pedido (antes `remove` borraba
+    siempre el último)
+  - `ai auto --on/--off` togglea el AutoMode REAL del orquestador
+    (antes imprimía "ENABLED" sin tocar nada); nuevo comando `auto` en
+    consola
+  - `agent interact` ya no declara "Session active" sin hacer nada
+  - `lab up/down` reportan el error real de docker compose (antes tabla
+    de contenedores inventada con IPs fijas)
+  - Métricas del dashboard: eliminados `stealth_rating` (fórmula
+    inventada), `total_exploits` (= nº de vulns) y
+    `persistence_installed` (= nº de agentes); BlueForge ya emite
+    eventos "bypassed" que nunca ocurrieron
+  - `module/push` responde 501 en vez de "pushed" teatral
+  - `accept <#>` resuelve el número de fila al ID real de la decisión
+    (antes "decision not found" siempre) y ya no promete ejecución
+  - Stubs del bridge (`ai_analyze`, `privesc`, `persist`, `worm`,
+    `blue`, `evasion`, `report`, `exfil`) devuelven fallo honesto en
+    vez de éxito vacío; HealthCheck reporta `handler_groups` (antes
+    leía la clave antigua y decía "0 handlers")
+  - Nube: eliminado el hallazgo `s3_public` inventado y las credenciales
+    AWS afirmadas sin haberlas capturado; los hits de keywords SQLi se
+    reportan como indicadores (severity info, confianza 0.3), no como
+    SQLi confirmada
+  - Bloodhound: eliminadas las rutas de ataque CORP.LOCAL hardcodeadas
+  - Banner de consola sin las promesas falsas "[Tab] complete [↑↓]
+    history" (no había readline); Ctrl+C ahora sale limpio de verdad
+  - `workspace`, `webhook on/off` y `sessions -i` ya no simulan cambios
+    de estado inexistentes
+  - Config: `auto_approval` del config se respeta (el código lo
+    forzaba a true); error de config.yaml visible en vez de silenciado
+- **Agent (gates de persistencia)**
+  - `VESPER_LAB_ONLY` y `safety.no_persistence` bloquean cron/systemd/
+    watchdog (antes la persistencia real ignoraba toda puerta)
+  - `crontab -r` (borrado TOTAL del crontab del usuario) sustituido por
+    eliminación selectiva de entradas Vesper
+  - `HostsInfected=1` fabricado eliminado del pipeline post-explotación
+
+### Añadido (auditoría profunda 2026-09-11)
+- **Sweep CIDR nativo** (roadmap v1.2 adelantado): `recon.ExpandTargets`
+  acepta IP, hostname o CIDR (tope 256 hosts, IPs/listas/comas) y
+  `ScanTargets` barre la subred; `vesper recon scan -t 10.20.0.0/24`
+  funciona offline y el endpoint `/api/recon/scan` ejecuta un scan REAL
+  que registra hosts/servicios en el world graph y emite
+  `recon.scan_complete` con hallazgos verdaderos (antes emitía un mock
+  vacío); 5 tests nuevos
+- Terminal web: los comandos lentos (`lab up`, módulos) drenan su salida
+  por quietud (400 ms) hasta 5 s — antes se truncaba a 150 ms fijos; los
+  errores (`printErr`) ya son visibles en el navegador
+- EOF en la consola ejecuta la última línea parcial (antes la descartaba)
+- Dashboard: reconexión WebSocket con backoff (antes un drop dejaba el
+  dashboard mudo para siempre), eventos `phase.changed` escuchados,
+  decisiones solo se marcan aprobadas si el servidor respondió 2xx,
+  credenciales con el esquema real (lowercase), AgentPanel/Heatmap/
+  NetworkMap alineados a `types.Agent`/`types.Vulnerability` reales y
+  sin topología de red inventada
+- PayloadBuilder web sin teatro: fuera los logs falsos de "AMSI/ETW
+  bypass", "Halo's Gate" y encoders inexistentes, y los setTimeout
+  "for dramatic effect"; solo salida real del compilador
+- Reconexión del terminal web cancelable en unmount + soporte de token
+  `?token=` (localStorage `vesper_token`)
+
+
 ### Añadido
 - **Scanner TCP nativo** (`internal/recon`): `vesper recon scan -t <ip>` ahora
   realiza un connect-scan real de 32 puertos comunes con captura de banner

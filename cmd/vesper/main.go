@@ -24,11 +24,11 @@ func main() {
 	args := os.Args[1:]
 
 	// fast path: --version/-v must never touch disk or config
-	for _, a := range args {
-		if a == "--version" || a == "-v" {
-			fmt.Printf("Vesper v%s\n", version)
-			return
-		}
+	// (only when it is the first argument — a later occurrence is a
+	// subcommand flag and must be handled by cobra)
+	if len(args) > 0 && (args[0] == "--version" || args[0] == "-v") {
+		fmt.Printf("Vesper v%s\n", version)
+		return
 	}
 
 	if len(args) > 0 && (args[0] == "console" || args[0] == "--console") {
